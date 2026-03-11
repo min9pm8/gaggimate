@@ -1,0 +1,46 @@
+---
+/**
+ * Sample Astro page for rendering shot posts.
+ * Place this at: src/pages/shots/[...slug].astro
+ *
+ * Adjust the layout import to match your blog's layout component.
+ */
+import { getCollection } from "astro:content";
+import ShotChart from "../../components/ShotChart.astro";
+// import your existing blog layout:
+// import BlogLayout from "../../layouts/BlogLayout.astro";
+
+export async function getStaticPaths() {
+  const shots = await getCollection("shots", ({ data }) => !data.draft);
+  return shots.map((entry) => ({
+    params: { slug: entry.slug },
+    props: entry,
+  }));
+}
+
+const entry = Astro.props;
+const { Content } = await entry.render();
+---
+
+<!-- Replace with your BlogLayout if you have one -->
+<html>
+  <head>
+    <title>{entry.data.title}</title>
+  </head>
+  <body>
+    <article>
+      <h1>{entry.data.title}</h1>
+      <p class="meta">
+        <time datetime={entry.data.pubDate.toISOString()}>
+          {entry.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+        </time>
+        &middot; {entry.data.profile} &middot; {entry.data.duration}s
+        {entry.data.weight && <>&middot; {entry.data.weight}g</>}
+      </p>
+
+      <ShotChart content={entry.body} />
+
+      <Content />
+    </article>
+  </body>
+</html>

@@ -1,0 +1,225 @@
+---
+/**
+ * ShotChart.astro - Renders espresso shot data as an interactive chart.
+ * Drop this into your Astro blog's src/components/ directory.
+ *
+ * Usage in a layout or page:
+ *   <ShotChart content={post.body} />
+ *
+ * Expects the markdown body to contain a ```json code block with shot sample data
+ * as produced by the GaggiMate GitLab Blog plugin.
+ */
+
+interface Props {
+  content: string;
+}
+
+const { content } = Astro.props;
+---
+
+<div class="shot-chart-container">
+  <canvas id="shotChart" width="800" height="400"></canvas>
+  <div class="chart-legend" id="chartLegend"></div>
+</div>
+
+<script define:vars={{ content }}>
+  // Extract JSON data from the ```json code block in the markdown
+  function extractShotData(markdown) {
+    const match = markdown.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[1]);
+    } catch {
+      return null;
+    }
+  }
+
+  const data = extractShotData(content);
+
+  if (data && data.length > 0) {
+    const canvas = document.getElementById('shotChart');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+
+    // High-DPI canvas
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    const W = rect.width;
+    const H = rect.height;
+    const PAD = { top: 20, right: 60, bottom: 40, left: 50 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    // Series config
+    const series = [
+      { key: 'cp', label: 'Pressure (bar)', color: '#e74c3c', yAxis: 'left' },
+      { key: 'tp', label: 'Target Pressure', color: '#e74c3c', yAxis: 'left', dashed: true },
+      { key: 'ct', label: 'Temperature (\u00b0C)', color: '#e67e22', yAxis: 'right' },
+      { key: 'fl', label: 'Flow (ml/s)', color: '#3498db', yAxis: 'left' },
+      { key: 'pf', label: 'Puck Flow', color: '#3498db', yAxis: 'left', dashed: true },
+      { key: 'v',  label: 'Weight (g)', color: '#2ecc71', yAxis: 'left' },
+    ];
+
+    // Compute axis ranges
+    const times = data.map(d => d.t);
+    const maxT = Math.max(...times);
+
+    let maxLeft = 0;
+    let maxRight = 0;
+    for (const d of data) {
+      for (const s of series) {
+        if (d[s.key] !== undefined) {
+          if (s.yAxis === 'left') maxLeft = Math.max(maxLeft, d[s.key]);
+          else maxRight = Math.max(maxRight, d[s.key]);
+        }
+      }
+    }
+    maxLeft = Math.ceil(maxLeft * 1.1);
+    maxRight = Math.ceil(maxRight / 5) * 5 + 5;
+
+    function xPos(t) { return PAD.left + (t / maxT) * plotW; }
+    function yPosLeft(v) { return PAD.top + plotH - (v / maxLeft) * plotH; }
+    function yPosRight(v) { return PAD.top + plotH - (v / maxRight) * plotH; }
+
+    // Grid
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 5; i++) {
+      const y = PAD.top + (plotH / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + plotW, y);
+      ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, PAD.top);
+    ctx.lineTo(PAD.left, PAD.top + plotH);
+    ctx.lineTo(PAD.left + plotW, PAD.top + plotH);
+    ctx.stroke();
+
+    // Right axis
+    ctx.beginPath();
+    ctx.moveTo(PAD.left + plotW, PAD.top);
+    ctx.lineTo(PAD.left + plotW, PAD.top + plotH);
+    ctx.stroke();
+
+    // Axis labels
+    ctx.fillStyle = '#666';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+
+    // X axis (time)
+    const tickInterval = maxT > 30 ? 10 : 5;
+    for (let t = 0; t <= maxT; t += tickInterval) {
+      const x = xPos(t);
+      ctx.fillText(t + 's', x, PAD.top + plotH + 20);
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, PAD.top);
+      ctx.lineTo(x, PAD.top + plotH);
+      ctx.stroke();
+    }
+
+    // Left Y axis labels
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const val = (maxLeft / 5) * (5 - i);
+      const y = PAD.top + (plotH / 5) * i;
+      ctx.fillText(val.toFixed(1), PAD.left - 8, y + 4);
+    }
+
+    // Right Y axis labels (temperature)
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#e67e22';
+    for (let i = 0; i <= 5; i++) {
+      const val = (maxRight / 5) * (5 - i);
+      const y = PAD.top + (plotH / 5) * i;
+      ctx.fillText(val.toFixed(0) + '\u00b0', PAD.left + plotW + 8, y + 4);
+    }
+
+    // Draw series
+    for (const s of series) {
+      const points = data.filter(d => d[s.key] !== undefined);
+      if (points.length === 0) continue;
+
+      const yFn = s.yAxis === 'left' ? yPosLeft : yPosRight;
+
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.dashed ? 1.5 : 2;
+      if (s.dashed) ctx.setLineDash([6, 4]);
+      else ctx.setLineDash([]);
+
+      ctx.beginPath();
+      for (let i = 0; i < points.length; i++) {
+        const x = xPos(points[i].t);
+        const y = yFn(points[i][s.key]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Legend
+    const legend = document.getElementById('chartLegend');
+    for (const s of series) {
+      const hasData = data.some(d => d[s.key] !== undefined);
+      if (!hasData) continue;
+      const item = document.createElement('span');
+      item.className = 'legend-item';
+      const line = s.dashed ? 'dashed' : 'solid';
+      item.innerHTML = `<span style="display:inline-block;width:20px;height:2px;background:${s.color};border-bottom:2px ${line} ${s.color};vertical-align:middle;margin-right:4px;"></span>${s.label}`;
+      legend.appendChild(item);
+    }
+  }
+</script>
+
+<style>
+  .shot-chart-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+
+  #shotChart {
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .shot-chart-container {
+      background: #1a1a2e;
+      border-color: #333;
+    }
+    .chart-legend {
+      color: #aaa;
+    }
+  }
+</style>

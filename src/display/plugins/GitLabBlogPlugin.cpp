@@ -163,18 +163,24 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     // Format timestamp for Astro frontmatter
     time_t ts = hdr.startEpoch;
     struct tm *tmInfo = gmtime(&ts);
-    char dateBuf[32];
-    strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%dT%H:%M:%SZ", tmInfo);
     char datePart[16];
     strftime(datePart, sizeof(datePart), "%Y-%m-%d", tmInfo);
 
     float finalWeight = hdr.finalWeight > 0 ? (float)hdr.finalWeight / WEIGHT_SCALE : 0.0f;
     float durationSec = (float)hdr.durationMs / 1000.0f;
 
+    // Build description line
+    String description = "Espresso shot log - " + String(hdr.profileName) + ", " + String(durationSec, 1) + "s";
+    if (finalWeight > 0.0f)
+        description += ", " + String(finalWeight, 1) + "g";
+
     // Astro-compatible frontmatter
     content += "---\n";
     content += "title: \"Shot #" + String(shotIndex) + " - " + String(hdr.profileName) + "\"\n";
-    content += "date: " + String(dateBuf) + "\n";
+    content += "description: \"" + description + "\"\n";
+    content += "pubDate: " + String(datePart) + "\n";
+    content += "draft: false\n";
+    content += "tags: [\"espresso\", \"shot-log\"]\n";
     content += "profile: \"" + String(hdr.profileName) + "\"\n";
     content += "duration: " + String(durationSec, 1) + "\n";
     if (finalWeight > 0.0f)
