@@ -1,6 +1,132 @@
+import { useState } from 'preact/hooks';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import homekitImage from '../../assets/homekit.png';
+
+function GitLabBlogCard({ formData, onChange }) {
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/gitlab-blog/test', { method: 'POST' });
+      const data = await res.json();
+      setTestResult(data);
+    } catch {
+      setTestResult({ success: false, message: 'Request failed - is the device connected?' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className='bg-base-200 rounded-lg p-4'>
+      <div className='flex items-center justify-between'>
+        <span className='text-xl font-medium'>GitLab Blog</span>
+        <input
+          id='gitlabBlogActive'
+          name='gitlabBlogActive'
+          value='gitlabBlogActive'
+          type='checkbox'
+          className='toggle toggle-primary'
+          checked={!!formData.gitlabBlogActive}
+          onChange={onChange('gitlabBlogActive')}
+          aria-label='Enable GitLab Blog'
+        />
+      </div>
+      {formData.gitlabBlogActive && (
+        <div className='border-base-300 mt-4 space-y-4 border-t pt-4'>
+          <p className='text-sm opacity-70'>
+            Automatically publish shot data to your GitLab Pages blog after each brew. Creates a
+            markdown post with shot summary and chart data.
+          </p>
+          <div className='form-control'>
+            <label htmlFor='gitlabBlogHost' className='mb-2 block text-sm font-medium'>
+              GitLab Host
+            </label>
+            <input
+              id='gitlabBlogHost'
+              name='gitlabBlogHost'
+              type='text'
+              className='input input-bordered w-full'
+              placeholder='gitlab.com'
+              value={formData.gitlabBlogHost}
+              onChange={onChange('gitlabBlogHost')}
+            />
+          </div>
+          <div className='form-control'>
+            <label htmlFor='gitlabBlogProjectId' className='mb-2 block text-sm font-medium'>
+              Project ID or Path
+            </label>
+            <input
+              id='gitlabBlogProjectId'
+              name='gitlabBlogProjectId'
+              type='text'
+              className='input input-bordered w-full'
+              placeholder='pministry/pministry.gitlab.io'
+              value={formData.gitlabBlogProjectId}
+              onChange={onChange('gitlabBlogProjectId')}
+            />
+          </div>
+          <div className='form-control'>
+            <label htmlFor='gitlabBlogToken' className='mb-2 block text-sm font-medium'>
+              Personal Access Token
+            </label>
+            <input
+              id='gitlabBlogToken'
+              name='gitlabBlogToken'
+              type='password'
+              className='input input-bordered w-full'
+              placeholder='glpat-...'
+              value={formData.gitlabBlogToken}
+              onChange={onChange('gitlabBlogToken')}
+            />
+          </div>
+          <div className='form-control'>
+            <label htmlFor='gitlabBlogPath' className='mb-2 block text-sm font-medium'>
+              Content Path
+            </label>
+            <input
+              id='gitlabBlogPath'
+              name='gitlabBlogPath'
+              type='text'
+              className='input input-bordered w-full'
+              placeholder='src/content/shots'
+              value={formData.gitlabBlogPath}
+              onChange={onChange('gitlabBlogPath')}
+            />
+          </div>
+          <div className='flex items-center gap-3'>
+            <button
+              type='button'
+              className='btn btn-outline btn-sm'
+              onClick={handleTest}
+              disabled={testing}
+            >
+              {testing ? (
+                <>
+                  <span className='loading loading-spinner loading-xs' />
+                  Testing...
+                </>
+              ) : (
+                'Test Connection'
+              )}
+            </button>
+            {testResult && (
+              <span
+                className={`text-sm font-medium ${testResult.success ? 'text-success' : 'text-error'}`}
+              >
+                {testResult.message}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function PluginCard({
   formData,
@@ -253,85 +379,7 @@ export function PluginCard({
         )}
       </div>
 
-      <div className='bg-base-200 rounded-lg p-4'>
-        <div className='flex items-center justify-between'>
-          <span className='text-xl font-medium'>GitLab Blog</span>
-          <input
-            id='gitlabBlogActive'
-            name='gitlabBlogActive'
-            value='gitlabBlogActive'
-            type='checkbox'
-            className='toggle toggle-primary'
-            checked={!!formData.gitlabBlogActive}
-            onChange={onChange('gitlabBlogActive')}
-            aria-label='Enable GitLab Blog'
-          />
-        </div>
-        {formData.gitlabBlogActive && (
-          <div className='border-base-300 mt-4 space-y-4 border-t pt-4'>
-            <p className='text-sm opacity-70'>
-              Automatically publish shot data to your GitLab Pages blog after each brew. Creates a
-              markdown post with shot summary and chart data.
-            </p>
-            <div className='form-control'>
-              <label htmlFor='gitlabBlogHost' className='mb-2 block text-sm font-medium'>
-                GitLab Host
-              </label>
-              <input
-                id='gitlabBlogHost'
-                name='gitlabBlogHost'
-                type='text'
-                className='input input-bordered w-full'
-                placeholder='gitlab.com'
-                value={formData.gitlabBlogHost}
-                onChange={onChange('gitlabBlogHost')}
-              />
-            </div>
-            <div className='form-control'>
-              <label htmlFor='gitlabBlogProjectId' className='mb-2 block text-sm font-medium'>
-                Project ID or Path
-              </label>
-              <input
-                id='gitlabBlogProjectId'
-                name='gitlabBlogProjectId'
-                type='text'
-                className='input input-bordered w-full'
-                placeholder='pministry/pministry.gitlab.io'
-                value={formData.gitlabBlogProjectId}
-                onChange={onChange('gitlabBlogProjectId')}
-              />
-            </div>
-            <div className='form-control'>
-              <label htmlFor='gitlabBlogToken' className='mb-2 block text-sm font-medium'>
-                Personal Access Token
-              </label>
-              <input
-                id='gitlabBlogToken'
-                name='gitlabBlogToken'
-                type='password'
-                className='input input-bordered w-full'
-                placeholder='glpat-...'
-                value={formData.gitlabBlogToken}
-                onChange={onChange('gitlabBlogToken')}
-              />
-            </div>
-            <div className='form-control'>
-              <label htmlFor='gitlabBlogPath' className='mb-2 block text-sm font-medium'>
-                Content Path
-              </label>
-              <input
-                id='gitlabBlogPath'
-                name='gitlabBlogPath'
-                type='text'
-                className='input input-bordered w-full'
-                placeholder='src/content/shots'
-                value={formData.gitlabBlogPath}
-                onChange={onChange('gitlabBlogPath')}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      <GitLabBlogCard formData={formData} onChange={onChange} />
 
       <div className='bg-base-200 rounded-lg p-4'>
         <div className='flex items-center justify-between'>

@@ -32,8 +32,9 @@ String urlEncode(const String &str) {
 }
 } // namespace
 
-void GitLabBlogPlugin::setup(Controller *c, PluginManager *pluginManager) {
+void GitLabBlogPlugin::setup(Controller *c, PluginManager *pm) {
     controller = c;
+    pluginManager = pm;
 
     pluginManager->on("boiler:currentTemperature:change",
                       [this](Event const &event) { lastTemperature = event.getFloat("value"); });
@@ -62,6 +63,55 @@ void GitLabBlogPlugin::setup(Controller *c, PluginManager *pluginManager) {
                       [this](Event const &event) { lastBluetoothWeight = event.getFloat("value"); });
     pluginManager->on("controller:volumetric-measurement:estimation:change",
                       [this](Event const &event) { lastEstimatedWeight = event.getFloat("value"); });
+}
+
+GitLabBlogStatus GitLabBlogPlugin::testConnection() {
+    GitLabBlogStatus status;
+    const Settings &settings = controller->getSettings();
+    const String host = settings.getGitLabBlogHost();
+    const String projectId = settings.getGitLabBlogProjectId();
+    const String token = settings.getGitLabBlogToken();
+
+    if (projectId.isEmpty() || token.isEmpty()) {
+        status.httpCode = 0;
+        status.message = "Missing project ID or token";
+        status.timestamp = millis();
+        return status;
+    }
+
+    String encodedProjectId = urlEncode(projectId);
+    String url = "https://" + host + "/api/v4/projects/" + encodedProjectId;
+
+    HTTPClient http;
+    http.begin(url);
+    http.addHeader("PRIVATE-TOKEN", token);
+    http.setTimeout(10000);
+
+    int responseCode = http.GET();
+    status.httpCode = responseCode;
+    status.timestamp = millis();
+
+    if (responseCode == 200) {
+        String response = http.getString();
+        JsonDocument doc;
+        if (deserializeJson(doc, response) == DeserializationError::Ok) {
+            String name = doc["path_with_namespace"] | "unknown";
+            status.message = "Connected to " + name;
+        } else {
+            status.message = "Connected successfully";
+        }
+    } else if (responseCode == 401) {
+        status.message = "Authentication failed - check your token";
+    } else if (responseCode == 404) {
+        status.message = "Project not found - check project ID/path";
+    } else if (responseCode < 0) {
+        status.message = "Connection failed - check host and network";
+    } else {
+        status.message = "HTTP " + String(responseCode);
+    }
+
+    http.end();
+    return status;
 }
 
 void GitLabBlogPlugin::publishShot(Controller *controller) {
@@ -221,12 +271,21 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     http.setTimeout(15000);
 
     int responseCode = http.POST(payloadStr);
+    lastStatus.httpCode = responseCode;
+    lastStatus.timestamp = millis();
     if (responseCode == 201) {
+        lastStatus.message = "Shot #" + String(shotIndex) + " published";
         printf("GitLabBlog: Shot #%d published successfully\n", shotIndex);
     } else {
-        printf("GitLabBlog: Failed to publish shot #%d, HTTP %d\n", shotIndex, responseCode);
         String response = http.getString();
+        lastStatus.message = "Shot #" + String(shotIndex) + " failed: HTTP " + String(responseCode);
+        printf("GitLabBlog: Failed to publish shot #%d, HTTP %d\n", shotIndex, responseCode);
         printf("GitLabBlog: %s\n", response.c_str());
     }
     http.end();
+
+    // Broadcast status to WebSocket clients
+    if (pluginManager) {
+        pluginManager->trigger("gitlab-blog:publish-status", "code", lastStatus.httpCode);
+    }
 }

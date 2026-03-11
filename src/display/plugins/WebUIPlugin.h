@@ -53,6 +53,9 @@ class WebUIPlugin : public Plugin {
     // Core dump download
     void handleCoreDumpDownload(AsyncWebServerRequest *request);
 
+    // GitLab Blog test
+    void handleGitLabBlogTest(AsyncWebServerRequest *request);
+
     GitHubOTA *ota = nullptr;
     AsyncWebServer server;
     AsyncWebSocket ws;
@@ -70,6 +73,11 @@ class WebUIPlugin : public Plugin {
     bool serverRunning = false;
     String updateComponent = "";
     float currentBluetoothWeight = 0.0f;
+
+    // GitLab Blog last publish status (from events)
+    int gitlabLastCode = 0;
+    String gitlabLastMessage = "";
+    unsigned long gitlabLastTimestamp = 0;
 };
 
 #endif // WEBUIPLUGIN_H

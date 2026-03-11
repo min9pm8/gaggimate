@@ -1,5 +1,6 @@
 #include "WebUIPlugin.h"
 #include <DNSServer.h>
+#include <HTTPClient.h>
 #include <SPIFFS.h>
 #include <display/core/Controller.h>
 #include <display/core/ProfileManager.h>
@@ -65,6 +66,20 @@ void WebUIPlugin::setup(Controller *_controller, PluginManager *_pluginManager) 
     // Subscribe to Bluetooth scale weight updates
     pluginManager->on("controller:volumetric-measurement:bluetooth:change",
                       [this](Event const &event) { this->currentBluetoothWeight = event.getFloat("value"); });
+
+    // Subscribe to GitLab Blog publish status
+    pluginManager->on("gitlab-blog:publish-status", [this](Event const &event) {
+        gitlabLastCode = event.getInt("code");
+        gitlabLastTimestamp = millis();
+        gitlabLastMessage = (gitlabLastCode == 201) ? "Published successfully" : "Failed: HTTP " + String(gitlabLastCode);
+
+        // Forward to WebSocket clients
+        JsonDocument doc;
+        doc["tp"] = "evt:gitlab-blog-status";
+        doc["code"] = gitlabLastCode;
+        doc["message"] = gitlabLastMessage;
+        ws.textAll(doc.as<String>());
+    });
 
     setupServer();
 }
@@ -196,6 +211,7 @@ void WebUIPlugin::setupServer() {
         serializeJson(doc, *response);
         request->send(response);
     });
+    server.on("/api/gitlab-blog/test", HTTP_POST, [this](AsyncWebServerRequest *request) { handleGitLabBlogTest(request); });
     server.on("/api/scales/list", [this](AsyncWebServerRequest *request) { handleBLEScaleList(request); });
     server.on("/api/scales/connect", [this](AsyncWebServerRequest *request) { handleBLEScaleConnect(request); });
     server.on("/api/scales/scan", [this](AsyncWebServerRequest *request) { handleBLEScaleScan(request); });
@@ -792,6 +808,78 @@ void WebUIPlugin::handleFlushStart(uint32_t clientId, JsonDocument &request) {
     String msg;
     serializeJson(response, msg);
     ws.text(clientId, msg);
+}
+
+void WebUIPlugin::handleGitLabBlogTest(AsyncWebServerRequest *request) {
+    const Settings &settings = controller->getSettings();
+    const String host = settings.getGitLabBlogHost();
+    const String projectId = settings.getGitLabBlogProjectId();
+    const String token = settings.getGitLabBlogToken();
+
+    JsonDocument doc;
+
+    if (projectId.isEmpty() || token.isEmpty()) {
+        doc["success"] = false;
+        doc["message"] = "Missing project ID or token";
+        AsyncResponseStream *response = request->beginResponseStream("application/json");
+        serializeJson(doc, *response);
+        request->send(response);
+        return;
+    }
+
+    // URL-encode the project ID
+    String encodedProjectId;
+    encodedProjectId.reserve(projectId.length() * 3);
+    for (size_t i = 0; i < projectId.length(); i++) {
+        char c = projectId.charAt(i);
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            encodedProjectId += c;
+        } else {
+            char buf[4];
+            snprintf(buf, sizeof(buf), "%%%02X", (unsigned char)c);
+            encodedProjectId += buf;
+        }
+    }
+
+    String url = "https://" + host + "/api/v4/projects/" + encodedProjectId;
+
+    HTTPClient http;
+    http.begin(url);
+    http.addHeader("PRIVATE-TOKEN", token);
+    http.setTimeout(10000);
+
+    int responseCode = http.GET();
+
+    if (responseCode == 200) {
+        String body = http.getString();
+        JsonDocument proj;
+        doc["success"] = true;
+        if (deserializeJson(proj, body) == DeserializationError::Ok) {
+            doc["message"] = "Connected to " + proj["path_with_namespace"].as<String>();
+            doc["project"] = proj["name_with_namespace"].as<String>();
+        } else {
+            doc["message"] = "Connected successfully";
+        }
+    } else if (responseCode == 401) {
+        doc["success"] = false;
+        doc["message"] = "Authentication failed - check your token";
+    } else if (responseCode == 404) {
+        doc["success"] = false;
+        doc["message"] = "Project not found - check project ID or path";
+    } else if (responseCode < 0) {
+        doc["success"] = false;
+        doc["message"] = "Connection failed - check host and network";
+    } else {
+        doc["success"] = false;
+        doc["message"] = "Unexpected response: HTTP " + String(responseCode);
+    }
+    doc["httpCode"] = responseCode;
+
+    http.end();
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    serializeJson(doc, *response);
+    request->send(response);
 }
 
 void WebUIPlugin::handleCoreDumpDownload(AsyncWebServerRequest *request) {
