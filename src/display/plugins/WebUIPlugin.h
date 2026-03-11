@@ -56,6 +56,11 @@ class WebUIPlugin : public Plugin {
     // GitLab Blog test
     void handleGitLabBlogTest(AsyncWebServerRequest *request);
 
+    // Local OTA upload
+    void handleLocalOTAUpload(AsyncWebServerRequest *request);
+    void handleLocalOTAUploadBody(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+                                  size_t len, bool final);
+
     GitHubOTA *ota = nullptr;
     AsyncWebServer server;
     AsyncWebSocket ws;

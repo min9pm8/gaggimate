@@ -6,6 +6,129 @@ import { downloadJson } from '../../utils/download.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 
+function LocalUploadCard() {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [result, setResult] = useState(null);
+
+  const handleUpload = useCallback(async () => {
+    if (!file) return;
+    setUploading(true);
+    setResult(null);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    try {
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/ota/upload');
+        xhr.upload.onprogress = e => {
+          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+              setResult({ success: true, message: 'Upload complete — device is restarting' });
+            } else {
+              setResult({ success: false, message: data.error || 'Upload failed' });
+            }
+          } catch {
+            setResult({ success: false, message: 'Unexpected response from device' });
+          }
+          resolve();
+        };
+        xhr.onerror = () => {
+          // After a successful firmware flash the device reboots and the connection drops,
+          // which the browser reports as a network error — treat that as success.
+          setResult({ success: true, message: 'Upload complete — device is restarting' });
+          resolve();
+        };
+        xhr.send(formData);
+      });
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  }, [file]);
+
+  const isFirmware = file && !file.name.endsWith('spiffs.bin');
+  const isSpiffs = file && file.name.endsWith('spiffs.bin');
+
+  return (
+    <Card sm={12} title='Local Firmware Upload'>
+      <p className='text-sm opacity-70'>
+        Upload a locally-built firmware or filesystem image directly to the device. Build with{' '}
+        <code>pio run -e display</code> and find the binary at{' '}
+        <code>.pio/build/display/firmware.bin</code> or <code>spiffs.bin</code>.
+      </p>
+      <div className='form-control'>
+        <label htmlFor='localFirmwareFile' className='mb-2 block text-sm font-medium'>
+          Select <code>firmware.bin</code> or <code>spiffs.bin</code>
+        </label>
+        <input
+          id='localFirmwareFile'
+          type='file'
+          accept='.bin'
+          className='file-input file-input-bordered w-full'
+          onChange={e => {
+            setFile(e.target.files[0] || null);
+            setResult(null);
+          }}
+          disabled={uploading}
+        />
+        {file && (
+          <p className='mt-1 text-xs opacity-60'>
+            {file.name} ({(file.size / 1024).toFixed(1)} KB) —{' '}
+            {isFirmware ? 'Display firmware' : isSpiffs ? 'Filesystem (SPIFFS)' : 'Unknown type'}
+          </p>
+        )}
+      </div>
+
+      {uploading && (
+        <div className='space-y-1'>
+          <div className='bg-base-300 h-2 w-full overflow-hidden rounded'>
+            <div
+              className='bg-primary h-full transition-all duration-200'
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className='text-xs opacity-60'>{uploadProgress}% uploaded</p>
+        </div>
+      )}
+
+      {result && (
+        <div className={`alert ${result.success ? 'alert-success' : 'alert-error'}`}>
+          <span>{result.message}</span>
+        </div>
+      )}
+
+      <div className='alert alert-warning'>
+        <span>The device will restart automatically after a successful upload.</span>
+      </div>
+
+      <button
+        type='button'
+        className='btn btn-secondary'
+        disabled={!file || uploading}
+        onClick={handleUpload}
+      >
+        {uploading ? (
+          <>
+            <Spinner size={4} />
+            Uploading...
+          </>
+        ) : (
+          'Upload to Device'
+        )}
+      </button>
+    </Card>
+  );
+}
+
 const imageUrlToBase64 = async blob => {
   return new Promise((onSuccess, onError) => {
     try {
@@ -157,6 +280,7 @@ export function OTA() {
 
       <form key='ota' method='post' action='/api/ota' ref={formRef} onSubmit={onSubmit}>
         <div className='grid grid-cols-1 gap-4 lg:grid-cols-12'>
+          <LocalUploadCard />
           <Card sm={12} title='System Information'>
             <div className='flex flex-col space-y-4'>
               <label htmlFor='channel' className='text-sm font-medium'>

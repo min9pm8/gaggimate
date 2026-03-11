@@ -2,6 +2,7 @@
 #include <DNSServer.h>
 #include <HTTPClient.h>
 #include <SPIFFS.h>
+#include <Update.h>
 #include <display/core/Controller.h>
 #include <display/core/ProfileManager.h>
 #include <display/core/process/BrewProcess.h>
@@ -212,6 +213,12 @@ void WebUIPlugin::setupServer() {
         request->send(response);
     });
     server.on("/api/gitlab-blog/test", HTTP_POST, [this](AsyncWebServerRequest *request) { handleGitLabBlogTest(request); });
+    server.on(
+        "/api/ota/upload", HTTP_POST,
+        [this](AsyncWebServerRequest *request) { handleLocalOTAUpload(request); },
+        nullptr,
+        [this](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
+               bool final) { handleLocalOTAUploadBody(request, filename, index, data, len, final); });
     server.on("/api/scales/list", [this](AsyncWebServerRequest *request) { handleBLEScaleList(request); });
     server.on("/api/scales/connect", [this](AsyncWebServerRequest *request) { handleBLEScaleConnect(request); });
     server.on("/api/scales/scan", [this](AsyncWebServerRequest *request) { handleBLEScaleScan(request); });
@@ -808,6 +815,46 @@ void WebUIPlugin::handleFlushStart(uint32_t clientId, JsonDocument &request) {
     String msg;
     serializeJson(response, msg);
     ws.text(clientId, msg);
+}
+
+void WebUIPlugin::handleLocalOTAUploadBody(AsyncWebServerRequest *request, const String &filename, size_t index,
+                                           uint8_t *data, size_t len, bool final) {
+    if (!index) {
+        int cmd = filename.endsWith("spiffs.bin") ? U_SPIFFS : U_FLASH;
+        printf("OTA upload start: %s (type=%s)\n", filename.c_str(), cmd == U_SPIFFS ? "spiffs" : "firmware");
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
+            printf("OTA begin failed: %s\n", Update.errorString());
+        }
+    }
+    if (Update.isRunning()) {
+        if (Update.write(data, len) != len) {
+            printf("OTA write error: %s\n", Update.errorString());
+        }
+    }
+    if (final && Update.isRunning()) {
+        if (!Update.end(true)) {
+            printf("OTA end failed: %s\n", Update.errorString());
+        } else {
+            printf("OTA upload complete: %s (%u bytes)\n", filename.c_str(), index + len);
+        }
+    }
+}
+
+void WebUIPlugin::handleLocalOTAUpload(AsyncWebServerRequest *request) {
+    JsonDocument doc;
+    bool success = !Update.hasError();
+    doc["success"] = success;
+    if (!success) {
+        doc["error"] = Update.errorString();
+    }
+    AsyncWebServerResponse *response = request->beginResponseStream("application/json");
+    response->addHeader("Connection", "close");
+    serializeJson(doc, *response);
+    request->send(response);
+    if (success) {
+        delay(200);
+        ESP.restart();
+    }
 }
 
 void WebUIPlugin::handleGitLabBlogTest(AsyncWebServerRequest *request) {
