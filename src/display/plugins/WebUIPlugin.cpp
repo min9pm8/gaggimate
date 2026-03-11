@@ -216,7 +216,6 @@ void WebUIPlugin::setupServer() {
     server.on(
         "/api/ota/upload", HTTP_POST,
         [this](AsyncWebServerRequest *request) { handleLocalOTAUpload(request); },
-        nullptr,
         [this](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
                bool final) { handleLocalOTAUploadBody(request, filename, index, data, len, final); });
     server.on("/api/scales/list", [this](AsyncWebServerRequest *request) { handleBLEScaleList(request); });
@@ -847,7 +846,7 @@ void WebUIPlugin::handleLocalOTAUpload(AsyncWebServerRequest *request) {
     if (!success) {
         doc["error"] = Update.errorString();
     }
-    AsyncWebServerResponse *response = request->beginResponseStream("application/json");
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
     response->addHeader("Connection", "close");
     serializeJson(doc, *response);
     request->send(response);
