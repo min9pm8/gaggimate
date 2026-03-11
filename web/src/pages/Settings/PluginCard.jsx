@@ -255,6 +255,86 @@ export function PluginCard({
 
       <div className='bg-base-200 rounded-lg p-4'>
         <div className='flex items-center justify-between'>
+          <span className='text-xl font-medium'>GitLab Blog</span>
+          <input
+            id='gitlabBlogActive'
+            name='gitlabBlogActive'
+            value='gitlabBlogActive'
+            type='checkbox'
+            className='toggle toggle-primary'
+            checked={!!formData.gitlabBlogActive}
+            onChange={onChange('gitlabBlogActive')}
+            aria-label='Enable GitLab Blog'
+          />
+        </div>
+        {formData.gitlabBlogActive && (
+          <div className='border-base-300 mt-4 space-y-4 border-t pt-4'>
+            <p className='text-sm opacity-70'>
+              Automatically publish shot data to your GitLab Pages blog after each brew. Creates a
+              markdown post with shot summary and chart data.
+            </p>
+            <div className='form-control'>
+              <label htmlFor='gitlabBlogHost' className='mb-2 block text-sm font-medium'>
+                GitLab Host
+              </label>
+              <input
+                id='gitlabBlogHost'
+                name='gitlabBlogHost'
+                type='text'
+                className='input input-bordered w-full'
+                placeholder='gitlab.com'
+                value={formData.gitlabBlogHost}
+                onChange={onChange('gitlabBlogHost')}
+              />
+            </div>
+            <div className='form-control'>
+              <label htmlFor='gitlabBlogProjectId' className='mb-2 block text-sm font-medium'>
+                Project ID or Path
+              </label>
+              <input
+                id='gitlabBlogProjectId'
+                name='gitlabBlogProjectId'
+                type='text'
+                className='input input-bordered w-full'
+                placeholder='pministry/pministry.gitlab.io'
+                value={formData.gitlabBlogProjectId}
+                onChange={onChange('gitlabBlogProjectId')}
+              />
+            </div>
+            <div className='form-control'>
+              <label htmlFor='gitlabBlogToken' className='mb-2 block text-sm font-medium'>
+                Personal Access Token
+              </label>
+              <input
+                id='gitlabBlogToken'
+                name='gitlabBlogToken'
+                type='password'
+                className='input input-bordered w-full'
+                placeholder='glpat-...'
+                value={formData.gitlabBlogToken}
+                onChange={onChange('gitlabBlogToken')}
+              />
+            </div>
+            <div className='form-control'>
+              <label htmlFor='gitlabBlogPath' className='mb-2 block text-sm font-medium'>
+                Content Path
+              </label>
+              <input
+                id='gitlabBlogPath'
+                name='gitlabBlogPath'
+                type='text'
+                className='input input-bordered w-full'
+                placeholder='src/content/shots'
+                value={formData.gitlabBlogPath}
+                onChange={onChange('gitlabBlogPath')}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className='bg-base-200 rounded-lg p-4'>
+        <div className='flex items-center justify-between'>
           <span className='text-xl font-medium'>Home Assistant over MQTT (Deprecated)</span>
           <input
             id='homeAssistant'

@@ -498,6 +498,15 @@ void WebUIPlugin::handleSettings(AsyncWebServerRequest *request) const {
                 settings->setHomeAssistantPort(request->arg("haPort").toInt());
             if (request->hasArg("haTopic"))
                 settings->setHomeAssistantTopic(request->arg("haTopic"));
+            settings->setGitLabBlogActive(request->hasArg("gitlabBlogActive"));
+            if (request->hasArg("gitlabBlogHost"))
+                settings->setGitLabBlogHost(request->arg("gitlabBlogHost"));
+            if (request->hasArg("gitlabBlogProjectId"))
+                settings->setGitLabBlogProjectId(request->arg("gitlabBlogProjectId"));
+            if (request->hasArg("gitlabBlogToken"))
+                settings->setGitLabBlogToken(request->arg("gitlabBlogToken"));
+            if (request->hasArg("gitlabBlogPath"))
+                settings->setGitLabBlogPath(request->arg("gitlabBlogPath"));
             settings->setMomentaryButtons(request->hasArg("momentaryButtons"));
             settings->setDelayAdjust(request->hasArg("delayAdjust"));
             if (request->hasArg("brewDelay"))
@@ -634,6 +643,11 @@ void WebUIPlugin::handleSettings(AsyncWebServerRequest *request) const {
     doc["emptyTankDistance"] = settings.getEmptyTankDistance();
     doc["fullTankDistance"] = settings.getFullTankDistance();
     doc["altRelayFunction"] = settings.getAltRelayFunction();
+    doc["gitlabBlogActive"] = settings.isGitLabBlogActive();
+    doc["gitlabBlogHost"] = settings.getGitLabBlogHost();
+    doc["gitlabBlogProjectId"] = settings.getGitLabBlogProjectId();
+    doc["gitlabBlogToken"] = settings.getGitLabBlogToken();
+    doc["gitlabBlogPath"] = settings.getGitLabBlogPath();
     // Add auto-wakeup settings to response
     doc["autowakeupEnabled"] = settings.isAutoWakeupEnabled();
 

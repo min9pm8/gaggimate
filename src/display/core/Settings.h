@@ -110,6 +110,11 @@ class Settings {
     int getAltRelayFunction() const { return altRelayFunction; }
     bool isAutoWakeupEnabled() const { return autowakeupEnabled; }
     std::vector<AutoWakeupSchedule> getAutoWakeupSchedules() const { return autowakeupSchedules; }
+    bool isGitLabBlogActive() const { return gitlabBlogActive; }
+    String getGitLabBlogHost() const { return gitlabBlogHost; }
+    String getGitLabBlogProjectId() const { return gitlabBlogProjectId; }
+    String getGitLabBlogToken() const { return gitlabBlogToken; }
+    String getGitLabBlogPath() const { return gitlabBlogPath; }
     void setTargetSteamTemp(int target_steam_temp);
     void setTargetWaterTemp(int target_water_temp);
     void setTemperatureOffset(int temperature_offset);
@@ -168,6 +173,11 @@ class Settings {
     void setAltRelayFunction(int alt_relay_function);
     void setAutoWakeupEnabled(bool enabled);
     void setAutoWakeupSchedules(const std::vector<AutoWakeupSchedule> &schedules);
+    void setGitLabBlogActive(bool active);
+    void setGitLabBlogHost(const String &host);
+    void setGitLabBlogProjectId(const String &projectId);
+    void setGitLabBlogToken(const String &token);
+    void setGitLabBlogPath(const String &path);
 
   private:
     Preferences preferences;
@@ -234,6 +244,13 @@ class Settings {
     int emptyTankDistance = 200;
     int fullTankDistance = 50;
     int altRelayFunction = ALT_RELAY_GRIND; // Default to grind
+
+    // GitLab Blog settings
+    bool gitlabBlogActive = false;
+    String gitlabBlogHost = "gitlab.com";
+    String gitlabBlogProjectId = "";
+    String gitlabBlogToken = "";
+    String gitlabBlogPath = "src/content/shots";
 
     void doSave();
     xTaskHandle taskHandle;

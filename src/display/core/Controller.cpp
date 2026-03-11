@@ -20,6 +20,7 @@
 #include <display/plugins/MQTTPlugin.h>
 #include <display/plugins/ShotHistoryPlugin.h>
 #include <display/plugins/SmartGrindPlugin.h>
+#include <display/plugins/GitLabBlogPlugin.h>
 #include <display/plugins/WebUIPlugin.h>
 #include <display/plugins/mDNSPlugin.h>
 #ifndef GAGGIMATE_HEADLESS
@@ -68,6 +69,9 @@ void Controller::setup() {
     }
     if (settings.isHomeAssistant()) {
         pluginManager->registerPlugin(new MQTTPlugin());
+    }
+    if (settings.isGitLabBlogActive()) {
+        pluginManager->registerPlugin(new GitLabBlogPlugin());
     }
     pluginManager->registerPlugin(new WebUIPlugin());
     pluginManager->registerPlugin(&ShotHistory);

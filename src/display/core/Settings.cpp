@@ -105,6 +105,13 @@ Settings::Settings() {
     fullTankDistance = preferences.getInt("sr_fd", 50);
     altRelayFunction = preferences.getInt("alt_relay", ALT_RELAY_GRIND);
 
+    // GitLab Blog settings
+    gitlabBlogActive = preferences.getBool("gl_a", false);
+    gitlabBlogHost = preferences.getString("gl_h", "gitlab.com");
+    gitlabBlogProjectId = preferences.getString("gl_p", "");
+    gitlabBlogToken = preferences.getString("gl_t", "");
+    gitlabBlogPath = preferences.getString("gl_pt", "src/content/shots");
+
     preferences.end();
 
     xTaskCreate(loopTask, "Settings::loop", configMINIMAL_STACK_SIZE * 6, this, 1, &taskHandle);
@@ -421,6 +428,31 @@ void Settings::setAutoWakeupSchedules(const std::vector<AutoWakeupSchedule> &sch
     save();
 }
 
+void Settings::setGitLabBlogActive(bool active) {
+    gitlabBlogActive = active;
+    save();
+}
+
+void Settings::setGitLabBlogHost(const String &host) {
+    gitlabBlogHost = host;
+    save();
+}
+
+void Settings::setGitLabBlogProjectId(const String &projectId) {
+    gitlabBlogProjectId = projectId;
+    save();
+}
+
+void Settings::setGitLabBlogToken(const String &token) {
+    gitlabBlogToken = token;
+    save();
+}
+
+void Settings::setGitLabBlogPath(const String &path) {
+    gitlabBlogPath = path;
+    save();
+}
+
 void Settings::doSave() {
     if (!dirty) {
         return;
@@ -502,6 +534,13 @@ void Settings::doSave() {
     preferences.putInt("sr_ed", emptyTankDistance);
     preferences.putInt("sr_fd", fullTankDistance);
     preferences.putInt("alt_relay", altRelayFunction);
+
+    // GitLab Blog settings
+    preferences.putBool("gl_a", gitlabBlogActive);
+    preferences.putString("gl_h", gitlabBlogHost);
+    preferences.putString("gl_p", gitlabBlogProjectId);
+    preferences.putString("gl_t", gitlabBlogToken);
+    preferences.putString("gl_pt", gitlabBlogPath);
 
     preferences.end();
 }
