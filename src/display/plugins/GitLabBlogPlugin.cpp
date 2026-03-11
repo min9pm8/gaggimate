@@ -163,6 +163,8 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     // Format timestamp for Astro frontmatter
     time_t ts = hdr.startEpoch;
     struct tm *tmInfo = gmtime(&ts);
+    char dateBuf[32];
+    strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%dT%H:%M:%SZ", tmInfo);
     char datePart[16];
     strftime(datePart, sizeof(datePart), "%Y-%m-%d", tmInfo);
 
@@ -178,7 +180,7 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     content += "---\n";
     content += "title: \"Shot #" + String(shotIndex) + " - " + String(hdr.profileName) + "\"\n";
     content += "description: \"" + description + "\"\n";
-    content += "pubDate: " + String(datePart) + "\n";
+    content += "pubDate: " + String(dateBuf) + "\n";
     content += "draft: false\n";
     content += "tags: [\"espresso\", \"shot-log\"]\n";
     content += "profile: \"" + String(hdr.profileName) + "\"\n";
@@ -208,9 +210,8 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
         content += "\n";
     }
 
-    // Chart data as JSON in a code block for Astro components to consume
-    content += "## Shot Data\n\n";
-    content += "```json\n";
+    // Chart data as hidden JSON for Astro components to consume
+    content += "<!--chart-data\n";
     content += "[";
 
     for (uint32_t i = 0; i < samplesToRead; i++) {
@@ -233,7 +234,7 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
         content += "}";
     }
 
-    content += "\n]\n```\n";
+    content += "\n]\n-->\n";
     shotFile.close();
 
     // Load notes if available

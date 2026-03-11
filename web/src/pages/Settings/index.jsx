@@ -130,6 +130,9 @@ export function Settings() {
       if (key === 'autowakeupEnabled') {
         value = !formData.autowakeupEnabled;
       }
+      if (key === 'gitlabBlogActive') {
+        value = !formData.gitlabBlogActive;
+      }
       if (key === 'standbyDisplayEnabled') {
         value = !formData.standbyDisplayEnabled;
         // Set standby brightness to 0 when toggle is off
@@ -210,6 +213,17 @@ export function Settings() {
       if (!formData.standbyDisplayEnabled) {
         formDataToSubmit.set('standbyBrightness', '0');
       }
+
+      // Explicitly set GitLab Blog fields from React state
+      if (formData.gitlabBlogActive) {
+        formDataToSubmit.set('gitlabBlogActive', 'on');
+      } else {
+        formDataToSubmit.delete('gitlabBlogActive');
+      }
+      if (formData.gitlabBlogHost) formDataToSubmit.set('gitlabBlogHost', formData.gitlabBlogHost);
+      if (formData.gitlabBlogProjectId) formDataToSubmit.set('gitlabBlogProjectId', formData.gitlabBlogProjectId);
+      if (formData.gitlabBlogToken) formDataToSubmit.set('gitlabBlogToken', formData.gitlabBlogToken);
+      if (formData.gitlabBlogPath) formDataToSubmit.set('gitlabBlogPath', formData.gitlabBlogPath);
 
       if (restart) {
         formDataToSubmit.append('restart', '1');

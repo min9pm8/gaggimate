@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __SPIFFS_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [preact(), tailwindcss()],
 
   server: {

@@ -217,7 +217,8 @@ void WebUIPlugin::setupServer() {
         "/api/ota/upload", HTTP_POST,
         [this](AsyncWebServerRequest *request) { handleLocalOTAUpload(request); },
         [this](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
-               bool final) { handleLocalOTAUploadBody(request, filename, index, data, len, final); });
+               bool final) { handleLocalOTAUploadBody(request, filename, index, data, len, final); },
+        nullptr);
     server.on("/api/scales/list", [this](AsyncWebServerRequest *request) { handleBLEScaleList(request); });
     server.on("/api/scales/connect", [this](AsyncWebServerRequest *request) { handleBLEScaleConnect(request); });
     server.on("/api/scales/scan", [this](AsyncWebServerRequest *request) { handleBLEScaleScan(request); });
@@ -752,7 +753,7 @@ void WebUIPlugin::updateOTAStatus(const String &version) {
     doc["tp"] = "res:ota-settings";
     doc["displayUpdateAvailable"] = ota->isUpdateAvailable(false);
     doc["controllerUpdateAvailable"] = ota->isUpdateAvailable(true);
-    doc["displayVersion"] = BUILD_GIT_VERSION;
+    doc["displayVersion"] = String(BUILD_GIT_VERSION) + " (" + BUILD_TIMESTAMP + ")";
     doc["controllerVersion"] = controller->getSystemInfo().version;
     doc["hardware"] = controller->getSystemInfo().hardware;
     doc["latestVersion"] = ota->getCurrentVersion();

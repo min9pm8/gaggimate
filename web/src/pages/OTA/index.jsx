@@ -24,6 +24,18 @@ function LocalUploadCard() {
     try {
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        let done = false;
+        const finish = (msg) => {
+          if (done) return;
+          done = true;
+          setResult({ success: true, message: msg || 'Upload complete — device is restarting' });
+          resolve();
+        };
+        // After upload bytes are fully sent, the device writes to flash then reboots.
+        // If no response arrives within 15s, assume success.
+        xhr.upload.onload = () => {
+          setTimeout(() => finish('Upload complete — device is restarting'), 15000);
+        };
         xhr.open('POST', '/api/ota/upload');
         xhr.upload.onprogress = e => {
           if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
@@ -32,20 +44,20 @@ function LocalUploadCard() {
           try {
             const data = JSON.parse(xhr.responseText);
             if (data.success) {
-              setResult({ success: true, message: 'Upload complete — device is restarting' });
+              finish('Upload complete — device is restarting');
             } else {
-              setResult({ success: false, message: data.error || 'Upload failed' });
+              if (!done) {
+                done = true;
+                setResult({ success: false, message: data.error || 'Upload failed' });
+                resolve();
+              }
             }
           } catch {
-            setResult({ success: false, message: 'Unexpected response from device' });
+            finish('Upload complete — device is restarting');
           }
-          resolve();
         };
         xhr.onerror = () => {
-          // After a successful firmware flash the device reboots and the connection drops,
-          // which the browser reports as a network error — treat that as success.
-          setResult({ success: true, message: 'Upload complete — device is restarting' });
-          resolve();
+          finish('Upload complete — device is restarting');
         };
         xhr.send(formData);
       });
@@ -324,6 +336,13 @@ export function OTA() {
                     (Update available: {formData.latestVersion})
                   </span>
                 )}
+              </div>
+            </div>
+
+            <div className='flex flex-col space-y-4'>
+              <label className='text-sm font-medium'>Web UI Build</label>
+              <div className='input input-bordered bg-base-200 cursor-default break-words whitespace-normal'>
+                <span className='break-all'>{__SPIFFS_BUILD_TIME__}</span>
               </div>
             </div>
 
