@@ -1,13 +1,14 @@
 ---
 /**
- * ShotChart.astro - Renders espresso shot data as an interactive chart.
+ * ShotChart.astro - Renders espresso shot data as interactive charts.
  * Drop this into your Astro blog's src/components/ directory.
  *
  * Usage in a layout or page:
  *   <ShotChart content={post.body} />
  *
- * Expects the markdown body to contain a ```json code block with shot sample data
- * as produced by the GaggiMate GitLab Blog plugin.
+ * Expects the markdown body to contain one or more ```json code blocks
+ * with shot sample data as produced by the GaggiMate GitLab Blog plugin.
+ * Each code block renders as a separate chart.
  */
 
 interface Props {
@@ -17,31 +18,40 @@ interface Props {
 const { content } = Astro.props;
 ---
 
-<div class="shot-chart-container">
-  <canvas id="shotChart" width="800" height="400"></canvas>
-  <div class="chart-legend" id="chartLegend"></div>
-</div>
+<div class="shot-charts" id="shotCharts"></div>
 
 <script define:vars={{ content }}>
-  // Extract JSON data from the ```json code block in the markdown
-  function extractShotData(markdown) {
-    const match = markdown.match(/```json\s*\n([\s\S]*?)\n```/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[1]);
-    } catch {
-      return null;
+  // Extract all JSON data blocks from ```json code blocks in the markdown
+  function extractAllShotData(markdown) {
+    const datasets = [];
+    const re = /```json\s*\n([\s\S]*?)\n```/g;
+    let match;
+    while ((match = re.exec(markdown)) !== null) {
+      try {
+        const data = JSON.parse(match[1]);
+        if (Array.isArray(data) && data.length > 0) {
+          datasets.push(data);
+        }
+      } catch { /* skip malformed blocks */ }
     }
+    return datasets;
   }
 
-  const data = extractShotData(content);
+  // Extract shot headings (## Shot #N) to label each chart
+  function extractShotHeadings(markdown) {
+    const headings = [];
+    const re = /^## (Shot #\d+)/gm;
+    let match;
+    while ((match = re.exec(markdown)) !== null) {
+      headings.push(match[1]);
+    }
+    return headings;
+  }
 
-  if (data && data.length > 0) {
-    const canvas = document.getElementById('shotChart');
+  function renderChart(canvas, data) {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
 
-    // High-DPI canvas
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
@@ -55,7 +65,6 @@ const { content } = Astro.props;
     const plotW = W - PAD.left - PAD.right;
     const plotH = H - PAD.top - PAD.bottom;
 
-    // Series config
     const series = [
       { key: 'cp', label: 'Pressure (bar)', color: '#e74c3c', yAxis: 'left' },
       { key: 'tp', label: 'Target Pressure', color: '#e74c3c', yAxis: 'left', dashed: true },
@@ -65,7 +74,6 @@ const { content } = Astro.props;
       { key: 'v',  label: 'Weight (g)', color: '#2ecc71', yAxis: 'left' },
     ];
 
-    // Compute axis ranges
     const times = data.map(d => d.t);
     const maxT = Math.max(...times);
 
@@ -170,30 +178,79 @@ const { content } = Astro.props;
     }
     ctx.setLineDash([]);
 
-    // Legend
-    const legend = document.getElementById('chartLegend');
-    for (const s of series) {
-      const hasData = data.some(d => d[s.key] !== undefined);
-      if (!hasData) continue;
+    // Return which series had data (for shared legend)
+    return series.filter(s => data.some(d => d[s.key] !== undefined));
+  }
+
+  const datasets = extractAllShotData(content);
+  const headings = extractShotHeadings(content);
+  const container = document.getElementById('shotCharts');
+
+  if (datasets.length > 0) {
+    let allActiveSeries = [];
+
+    datasets.forEach((data, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'shot-chart-container';
+
+      // Add heading if there are multiple shots
+      if (datasets.length > 1) {
+        const heading = document.createElement('h3');
+        heading.className = 'shot-chart-heading';
+        heading.textContent = headings[idx] || `Shot ${idx + 1}`;
+        wrapper.appendChild(heading);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 400;
+      canvas.className = 'shot-chart-canvas';
+      wrapper.appendChild(canvas);
+
+      container.appendChild(wrapper);
+
+      const activeSeries = renderChart(canvas, data);
+      for (const s of activeSeries) {
+        if (!allActiveSeries.find(a => a.key === s.key)) {
+          allActiveSeries.push(s);
+        }
+      }
+    });
+
+    // Shared legend after all charts
+    const legend = document.createElement('div');
+    legend.className = 'chart-legend';
+    for (const s of allActiveSeries) {
       const item = document.createElement('span');
       item.className = 'legend-item';
       const line = s.dashed ? 'dashed' : 'solid';
       item.innerHTML = `<span style="display:inline-block;width:20px;height:2px;background:${s.color};border-bottom:2px ${line} ${s.color};vertical-align:middle;margin-right:4px;"></span>${s.label}`;
       legend.appendChild(item);
     }
+    container.appendChild(legend);
   }
 </script>
 
 <style>
-  .shot-chart-container {
+  .shot-charts {
     margin: 1.5rem 0;
+  }
+
+  .shot-chart-container {
+    margin-bottom: 1.5rem;
     padding: 1rem;
     background: #fafafa;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
   }
 
-  #shotChart {
+  .shot-chart-heading {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    color: #444;
+  }
+
+  .shot-chart-canvas {
     width: 100%;
     max-width: 800px;
     height: 400px;
@@ -217,6 +274,9 @@ const { content } = Astro.props;
     .shot-chart-container {
       background: #1a1a2e;
       border-color: #333;
+    }
+    .shot-chart-heading {
+      color: #ccc;
     }
     .chart-legend {
       color: #aaa;

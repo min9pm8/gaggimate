@@ -45,24 +45,94 @@ void GitLabBlogPlugin::setup(Controller *c, PluginManager *pm) {
         lastPuckFlow = controller->getCurrentPuckFlow();
     });
 
-    // Publish after extended recording completes (shot fully finalized)
+    // Mark shot as pending after extended recording completes
     pluginManager->on("controller:brew:clear", [this](Event const &) {
         if (!controller->getSettings().isGitLabBlogActive())
             return;
         if (brewStartTime == 0)
             return;
         unsigned long duration = millis() - brewStartTime;
-        if (duration <= 7500) // Skip failed/short shots, same threshold as ShotHistoryPlugin
+        if (duration <= 7500) // Skip failed/short shots
             return;
 
-        publishShot(controller);
+        int shotIndex = controller->getSettings().getHistoryIndex() - 1;
+        if (shotIndex < 0)
+            return;
+
+        if (pendingShotCount < MAX_PENDING_SHOTS) {
+            pendingShots[pendingShotCount++] = shotIndex;
+        }
+        if (pendingShotCount == 1) {
+            activityCount = 0; // Reset activities for new session
+        }
+        lastEventTime = millis();
         brewStartTime = 0;
+        printf("GitLabBlog: Shot #%d queued (%d pending), waiting for activities...\n", shotIndex, pendingShotCount);
+    });
+
+    // Track steam/water process start
+    pluginManager->on("controller:mode:change", [this](Event const &event) { activeMode = event.getInt("value"); });
+    pluginManager->on("controller:process:start", [this](Event const &) {
+        if (activeMode == 2 || activeMode == 3) { // MODE_STEAM or MODE_WATER
+            processStartTime = millis();
+            processStartTemp = lastTemperature;
+        }
+    });
+    pluginManager->on("controller:process:end", [this](Event const &) {
+        if (processStartTime == 0)
+            return;
+        if (activeMode != 2 && activeMode != 3)
+            return;
+        if (pendingShotCount == 0) {
+            processStartTime = 0;
+            return; // No shots pending, skip
+        }
+        unsigned long duration = millis() - processStartTime;
+        if (duration < 3000) { // Skip accidental taps
+            processStartTime = 0;
+            return;
+        }
+
+        // Buffer the activity
+        if (activityCount < MAX_ACTIVITIES) {
+            activities[activityCount].type = (activeMode == 2) ? "Steam" : "Hot Water";
+            activities[activityCount].startTemp = processStartTemp;
+            activities[activityCount].endTemp = lastTemperature;
+            activities[activityCount].durationMs = duration;
+            activities[activityCount].timestamp = time(nullptr);
+            activityCount++;
+            lastEventTime = millis(); // Reset the publish timer
+            printf("GitLabBlog: Buffered %s activity (%lu ms)\n",
+                   activities[activityCount - 1].type.c_str(), duration);
+        }
+        processStartTime = 0;
+    });
+
+    // Manual publish trigger from web UI (publishes immediately with whatever is buffered)
+    pluginManager->on("gitlab-blog:publish", [this](Event const &) {
+        int shotIndex = controller->getSettings().getHistoryIndex() - 1;
+        if (shotIndex >= 0) {
+            if (pendingShotCount == 0) {
+                pendingShots[pendingShotCount++] = shotIndex;
+            }
+            publishCombinedPost();
+        }
     });
 
     pluginManager->on("controller:volumetric-measurement:bluetooth:change",
                       [this](Event const &event) { lastBluetoothWeight = event.getFloat("value"); });
     pluginManager->on("controller:volumetric-measurement:estimation:change",
                       [this](Event const &event) { lastEstimatedWeight = event.getFloat("value"); });
+}
+
+void GitLabBlogPlugin::loop() {
+    if (pendingShotCount == 0)
+        return;
+    if (millis() - lastEventTime < PUBLISH_DELAY_MS)
+        return;
+
+    printf("GitLabBlog: Publishing %d shot(s) with %d activities\n", pendingShotCount, activityCount);
+    publishCombinedPost();
 }
 
 GitLabBlogStatus GitLabBlogPlugin::testConnection() {
@@ -114,7 +184,7 @@ GitLabBlogStatus GitLabBlogPlugin::testConnection() {
     return status;
 }
 
-void GitLabBlogPlugin::publishShot(Controller *controller) {
+void GitLabBlogPlugin::publishCombinedPost() {
     const Settings &settings = controller->getSettings();
     const String host = settings.getGitLabBlogHost();
     const String projectId = settings.getGitLabBlogProjectId();
@@ -123,140 +193,201 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
 
     if (projectId.isEmpty() || token.isEmpty()) {
         printf("GitLabBlog: Missing project ID or token\n");
+        pendingShotCount = 0;
         return;
     }
 
-    // Get the most recent shot ID
-    int shotIndex = settings.getHistoryIndex() - 1;
-    if (shotIndex < 0)
+    // Snapshot and clear pending state
+    int shotCount = pendingShotCount;
+    int shots[MAX_PENDING_SHOTS];
+    for (int i = 0; i < shotCount; i++)
+        shots[i] = pendingShots[i];
+    pendingShotCount = 0;
+
+    if (shotCount == 0)
         return;
 
-    String paddedId = String(shotIndex);
-    while (paddedId.length() < 6)
-        paddedId = "0" + paddedId;
-
-    // Read the shot header from .slog file
     FS *fs = controller->isSDCard() ? (FS *)&SD_MMC : (FS *)&SPIFFS;
-    String slogPath = "/h/" + paddedId + ".slog";
-    File shotFile = fs->open(slogPath, "r");
-    if (!shotFile) {
-        printf("GitLabBlog: Cannot open %s\n", slogPath.c_str());
+
+    // Read first shot header for frontmatter timestamp and profile
+    String firstPaddedId = String(shots[0]);
+    while (firstPaddedId.length() < 6)
+        firstPaddedId = "0" + firstPaddedId;
+
+    String firstSlogPath = "/h/" + firstPaddedId + ".slog";
+    File firstFile = fs->open(firstSlogPath, "r");
+    if (!firstFile) {
+        printf("GitLabBlog: Cannot open %s\n", firstSlogPath.c_str());
         return;
     }
 
-    ShotLogHeader hdr{};
-    if (shotFile.read(reinterpret_cast<uint8_t *>(&hdr), sizeof(hdr)) != sizeof(hdr) || hdr.magic != SHOT_LOG_MAGIC) {
-        shotFile.close();
+    ShotLogHeader firstHdr{};
+    if (firstFile.read(reinterpret_cast<uint8_t *>(&firstHdr), sizeof(firstHdr)) != sizeof(firstHdr) ||
+        firstHdr.magic != SHOT_LOG_MAGIC) {
+        firstFile.close();
         printf("GitLabBlog: Invalid shot file\n");
         return;
     }
+    firstFile.close();
 
-    // Read samples for chart data
-    uint32_t samplesToRead = hdr.sampleCount;
-    if (samplesToRead > MAX_SAMPLES_FOR_BLOG)
-        samplesToRead = MAX_SAMPLES_FOR_BLOG;
-
-    // Build the markdown content
-    String content;
-    content.reserve(4096);
-
-    // Format timestamp for Astro frontmatter
-    time_t ts = hdr.startEpoch;
-    struct tm *tmInfo = gmtime(&ts);
+    // Format timestamp from first shot
+    time_t ts = firstHdr.startEpoch;
+    struct tm *tmInfo = localtime(&ts);
     char dateBuf[32];
-    strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%dT%H:%M:%SZ", tmInfo);
+    strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%dT%H:%M:%S", tmInfo);
     char datePart[16];
     strftime(datePart, sizeof(datePart), "%Y-%m-%d", tmInfo);
 
-    float finalWeight = hdr.finalWeight > 0 ? (float)hdr.finalWeight / WEIGHT_SCALE : 0.0f;
-    float durationSec = (float)hdr.durationMs / 1000.0f;
+    // Build title: "Shot #1, #2 - ProfileName"
+    String title = "Shot";
+    for (int i = 0; i < shotCount; i++) {
+        if (i > 0)
+            title += ",";
+        title += " #" + String(shots[i]);
+    }
+    title += " - " + String(firstHdr.profileName);
 
-    // Build description line
-    String description = "Espresso shot log - " + String(hdr.profileName) + ", " + String(durationSec, 1) + "s";
-    if (finalWeight > 0.0f)
-        description += ", " + String(finalWeight, 1) + "g";
+    // Build markdown content
+    String content;
+    content.reserve(4096);
 
     // Astro-compatible frontmatter
     content += "---\n";
-    content += "title: \"Shot #" + String(shotIndex) + " - " + String(hdr.profileName) + "\"\n";
-    content += "description: \"" + description + "\"\n";
+    content += "title: \"" + title + "\"\n";
     content += "pubDate: " + String(dateBuf) + "\n";
     content += "draft: false\n";
     content += "tags: [\"espresso\", \"shot-log\"]\n";
-    content += "profile: \"" + String(hdr.profileName) + "\"\n";
-    content += "duration: " + String(durationSec, 1) + "\n";
-    if (finalWeight > 0.0f)
-        content += "weight: " + String(finalWeight, 1) + "\n";
-    content += "shotId: " + String(shotIndex) + "\n";
+    content += "profile: \"" + String(firstHdr.profileName) + "\"\n";
+    if (shotCount == 1) {
+        content += "shotId: " + String(shots[0]) + "\n";
+    } else {
+        content += "shotIds: [";
+        for (int i = 0; i < shotCount; i++) {
+            if (i > 0)
+                content += ", ";
+            content += String(shots[i]);
+        }
+        content += "]\n";
+    }
     content += "---\n\n";
 
-    // Summary section
-    content += "## Shot Summary\n\n";
-    content += "| Metric | Value |\n";
-    content += "|--------|-------|\n";
-    content += "| Profile | " + String(hdr.profileName) + " |\n";
-    content += "| Duration | " + String(durationSec, 1) + "s |\n";
-    if (finalWeight > 0.0f)
-        content += "| Output | " + String(finalWeight, 1) + "g |\n";
-    content += "\n";
+    // Per-shot sections
+    for (int s = 0; s < shotCount; s++) {
+        String paddedId = String(shots[s]);
+        while (paddedId.length() < 6)
+            paddedId = "0" + paddedId;
 
-    // Phase transitions
-    if (hdr.phaseTransitionCount > 0) {
-        content += "## Phases\n\n";
-        for (uint8_t i = 0; i < hdr.phaseTransitionCount && i < 12; i++) {
-            float phaseTime = (float)(hdr.phaseTransitions[i].sampleIndex * SHOT_LOG_SAMPLE_INTERVAL_MS) / 1000.0f;
-            content += "- **" + String(hdr.phaseTransitions[i].phaseName) + "** at " + String(phaseTime, 1) + "s\n";
+        String slogPath = "/h/" + paddedId + ".slog";
+        File shotFile = fs->open(slogPath, "r");
+        if (!shotFile) {
+            printf("GitLabBlog: Cannot open %s\n", slogPath.c_str());
+            continue;
         }
+
+        ShotLogHeader hdr{};
+        if (shotFile.read(reinterpret_cast<uint8_t *>(&hdr), sizeof(hdr)) != sizeof(hdr) ||
+            hdr.magic != SHOT_LOG_MAGIC) {
+            shotFile.close();
+            printf("GitLabBlog: Invalid shot file for #%d\n", shots[s]);
+            continue;
+        }
+
+        float finalWeight = hdr.finalWeight > 0 ? (float)hdr.finalWeight / WEIGHT_SCALE : 0.0f;
+        float durationSec = (float)hdr.durationMs / 1000.0f;
+
+        // Shot heading
+        content += "## Shot #" + String(shots[s]) + "\n\n";
+
+        // Summary table
+        content += "| Metric | Value |\n";
+        content += "|--------|-------|\n";
+        content += "| Profile | " + String(hdr.profileName) + " |\n";
+        content += "| Duration | " + String(durationSec, 1) + "s |\n";
+        if (finalWeight > 0.0f)
+            content += "| Output | " + String(finalWeight, 1) + "g |\n";
         content += "\n";
-    }
 
-    // Chart data as hidden JSON for Astro components to consume
-    content += "<!--chart-data\n";
-    content += "[";
+        // Phase transitions
+        if (hdr.phaseTransitionCount > 0) {
+            content += "### Phases\n\n";
+            for (uint8_t i = 0; i < hdr.phaseTransitionCount && i < 12; i++) {
+                float phaseTime = (float)(hdr.phaseTransitions[i].sampleIndex * SHOT_LOG_SAMPLE_INTERVAL_MS) / 1000.0f;
+                content += "- **" + String(hdr.phaseTransitions[i].phaseName) + "** at " + String(phaseTime, 1) + "s\n";
+            }
+            content += "\n";
+        }
 
-    for (uint32_t i = 0; i < samplesToRead; i++) {
-        ShotLogSample sample{};
-        if (shotFile.read(reinterpret_cast<uint8_t *>(&sample), sizeof(sample)) != sizeof(sample))
-            break;
+        // Chart data as fenced JSON code block
+        uint32_t samplesToRead = hdr.sampleCount;
+        if (samplesToRead > MAX_SAMPLES_FOR_BLOG)
+            samplesToRead = MAX_SAMPLES_FOR_BLOG;
 
-        if (i > 0)
-            content += ",";
-        content += "\n{";
-        content += "\"t\":" + String((float)sample.t * SHOT_LOG_SAMPLE_INTERVAL_MS / 1000.0f, 2);
-        content += ",\"ct\":" + String((float)sample.ct / TEMP_SCALE, 1);
-        content += ",\"tt\":" + String((float)sample.tt / TEMP_SCALE, 1);
-        content += ",\"cp\":" + String((float)sample.cp / PRESSURE_SCALE, 1);
-        content += ",\"tp\":" + String((float)sample.tp / PRESSURE_SCALE, 1);
-        content += ",\"fl\":" + String((float)sample.fl / FLOW_SCALE, 2);
-        content += ",\"pf\":" + String((float)sample.pf / FLOW_SCALE, 2);
-        if (sample.v > 0)
-            content += ",\"v\":" + String((float)sample.v / WEIGHT_SCALE, 1);
-        content += "}";
-    }
+        content += "```json\n";
+        content += "[";
 
-    content += "\n]\n-->\n";
-    shotFile.close();
+        for (uint32_t i = 0; i < samplesToRead; i++) {
+            ShotLogSample sample{};
+            if (shotFile.read(reinterpret_cast<uint8_t *>(&sample), sizeof(sample)) != sizeof(sample))
+                break;
 
-    // Load notes if available
-    String notesPath = "/h/" + paddedId + ".json";
-    if (fs->exists(notesPath)) {
-        File notesFile = fs->open(notesPath, "r");
-        if (notesFile) {
-            String notesStr = notesFile.readString();
-            notesFile.close();
+            if (i > 0)
+                content += ",";
+            content += "\n{";
+            content += "\"t\":" + String((float)sample.t * SHOT_LOG_SAMPLE_INTERVAL_MS / 1000.0f, 2);
+            content += ",\"ct\":" + String((float)sample.ct / TEMP_SCALE, 1);
+            content += ",\"tt\":" + String((float)sample.tt / TEMP_SCALE, 1);
+            content += ",\"cp\":" + String((float)sample.cp / PRESSURE_SCALE, 1);
+            content += ",\"tp\":" + String((float)sample.tp / PRESSURE_SCALE, 1);
+            content += ",\"fl\":" + String((float)sample.fl / FLOW_SCALE, 2);
+            content += ",\"pf\":" + String((float)sample.pf / FLOW_SCALE, 2);
+            if (sample.v > 0)
+                content += ",\"v\":" + String((float)sample.v / WEIGHT_SCALE, 1);
+            content += "}";
+        }
 
-            JsonDocument notesDoc;
-            if (deserializeJson(notesDoc, notesStr) == DeserializationError::Ok) {
-                if (notesDoc["notes"].is<String>() && notesDoc["notes"].as<String>().length() > 0) {
-                    content += "\n## Notes\n\n";
-                    content += notesDoc["notes"].as<String>() + "\n";
+        content += "\n]\n```\n\n";
+        shotFile.close();
+
+        // Load notes if available
+        String notesPath = "/h/" + paddedId + ".json";
+        if (fs->exists(notesPath)) {
+            File notesFile = fs->open(notesPath, "r");
+            if (notesFile) {
+                String notesStr = notesFile.readString();
+                notesFile.close();
+
+                JsonDocument notesDoc;
+                if (deserializeJson(notesDoc, notesStr) == DeserializationError::Ok) {
+                    if (notesDoc["notes"].is<String>() && notesDoc["notes"].as<String>().length() > 0) {
+                        content += "### Notes\n\n";
+                        content += notesDoc["notes"].as<String>() + "\n\n";
+                    }
                 }
             }
         }
     }
 
+    // Steam/water activities (shared across all shots in the session)
+    if (activityCount > 0) {
+        content += "## Activities\n\n";
+        content += "| Type | Duration | Start Temp | End Temp |\n";
+        content += "|------|----------|------------|----------|\n";
+        for (int i = 0; i < activityCount; i++) {
+            float actDuration = (float)activities[i].durationMs / 1000.0f;
+            content += "| " + activities[i].type;
+            content += " | " + String(actDuration, 1) + "s";
+            content += " | " + String(activities[i].startTemp, 1) + " C";
+            content += " | " + String(activities[i].endTemp, 1) + " C |\n";
+        }
+        content += "\n";
+    }
+
     // POST to GitLab API
-    String filePath = basePath + "/" + String(datePart) + "-shot-" + String(shotIndex) + ".md";
+    String fileName = String(datePart) + "-shot-" + String(shots[0]);
+    if (shotCount > 1)
+        fileName += "-" + String(shots[shotCount - 1]);
+    fileName += ".md";
+    String filePath = basePath + "/" + fileName;
     String encodedPath = urlEncode(filePath);
     String encodedProjectId = urlEncode(projectId);
 
@@ -266,7 +397,9 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     JsonDocument payload;
     payload["branch"] = "main";
     payload["content"] = content;
-    payload["commit_message"] = "Add shot #" + String(shotIndex) + " - " + String(hdr.profileName);
+
+    String commitMsg = "Add " + title;
+    payload["commit_message"] = commitMsg;
 
     String payloadStr;
     serializeJson(payload, payloadStr);
@@ -281,15 +414,17 @@ void GitLabBlogPlugin::publishShot(Controller *controller) {
     lastStatus.httpCode = responseCode;
     lastStatus.timestamp = millis();
     if (responseCode == 201) {
-        lastStatus.message = "Shot #" + String(shotIndex) + " published";
-        printf("GitLabBlog: Shot #%d published successfully\n", shotIndex);
+        lastStatus.message = title + " published";
+        printf("GitLabBlog: %s published with %d activities\n", title.c_str(), activityCount);
     } else {
         String response = http.getString();
-        lastStatus.message = "Shot #" + String(shotIndex) + " failed: HTTP " + String(responseCode);
-        printf("GitLabBlog: Failed to publish shot #%d, HTTP %d\n", shotIndex, responseCode);
+        lastStatus.message = title + " failed: HTTP " + String(responseCode);
+        printf("GitLabBlog: Failed to publish, HTTP %d\n", responseCode);
         printf("GitLabBlog: %s\n", response.c_str());
     }
     http.end();
+
+    activityCount = 0; // Clear buffered activities
 
     // Broadcast status to WebSocket clients
     if (pluginManager) {
