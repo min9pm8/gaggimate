@@ -232,6 +232,9 @@ void DefaultUI::loop() {
         rerender = true;
     }
 
+    // Capture rerender flag before it is cleared, to track last interaction time
+    const bool hadRerender = rerender;
+
     if (rerender) {
         rerender = false;
         lastRender = now;
@@ -259,6 +262,51 @@ void DefaultUI::loop() {
         updateNewBrewScreen();
         updateNewStandbyScreen();
         effect_mgr.evaluate_all();
+    }
+
+    // Error overlay management
+    static lv_obj_t *errorOverlay = NULL;
+    if (error && currentScreen != ui_InitScreen) {
+        if (errorOverlay == NULL || lv_obj_get_parent(errorOverlay) != lv_scr_act()) {
+            // Clean up old overlay if screen changed
+            if (errorOverlay != NULL) {
+                lv_obj_del(errorOverlay);
+            }
+            errorOverlay = lv_obj_create(lv_scr_act());
+            lv_obj_set_size(errorOverlay, 466, 466);
+            lv_obj_center(errorOverlay);
+            lv_obj_set_style_bg_color(errorOverlay, UI_COLOR_RED, LV_PART_MAIN);
+            lv_obj_set_style_bg_opa(errorOverlay, UI_OPA(80), LV_PART_MAIN);
+            lv_obj_set_style_radius(errorOverlay, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+            lv_obj_clear_flag(errorOverlay, LV_OBJ_FLAG_SCROLLABLE);
+
+            lv_obj_t *errLabel = lv_label_create(errorOverlay);
+            // Map error code to text
+            static const char *errorMessages[] = {"", "COMM ERROR", "COMM ERROR", "PROTOCOL ERROR", "THERMAL RUNAWAY",
+                                                   "CONNECTION LOST"};
+            int errCode = controller->getError();
+            const char *msg = (errCode > 0 && errCode <= 5) ? errorMessages[errCode] : "ERROR";
+            lv_label_set_text(errLabel, msg);
+            lv_obj_set_style_text_font(errLabel, &lv_font_montserrat_16, LV_PART_MAIN);
+            lv_obj_set_style_text_color(errLabel, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+            lv_obj_center(errLabel);
+        }
+    } else if (!error && errorOverlay != NULL) {
+        lv_obj_del(errorOverlay);
+        errorOverlay = NULL;
+    }
+
+    // Auto-standby timeout — track last interaction time (touch events trigger rerender)
+    static unsigned long lastInteraction = millis();
+    if (hadRerender) {
+        lastInteraction = millis();
+    }
+    if (currentScreen != ui_NewStandbyScreen && !active) {
+        const Settings &autoStandbySettings = controller->getSettings();
+        if (autoStandbySettings.getStandbyTimeout() > 0 &&
+            millis() - lastInteraction > (unsigned long)autoStandbySettings.getStandbyTimeout()) {
+            controller->activateStandby();
+        }
     }
 
     lv_task_handler();
