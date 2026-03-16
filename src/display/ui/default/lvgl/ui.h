@@ -44,6 +44,7 @@ extern "C" {
 #include "screens/ui_NewBrewScreen.h"
 #include "screens/ui_NewWaterScreen.h"
 #include "screens/ui_NewSteamScreen.h"
+#include "screens/ui_UnifiedScreen.h"
 #include "ui_new_events.h"
 #include "ui_new_colors.h"
 

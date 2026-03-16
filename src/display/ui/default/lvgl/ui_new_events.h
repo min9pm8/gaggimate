@@ -17,6 +17,15 @@ void ui_event_NewWaterScreen_gesture(lv_event_t *e);
 void ui_event_NewWaterScreen_pump(lv_event_t *e);
 void ui_event_NewSteamScreen_gesture(lv_event_t *e);
 
+// Unified screen events
+void ui_event_UnifiedScreen_flush(lv_event_t *e);
+void ui_event_UnifiedScreen_action(lv_event_t *e);
+void ui_event_UnifiedScreen_stop(lv_event_t *e);
+void ui_event_UnifiedScreen_complete(lv_event_t *e);
+void ui_event_UnifiedScreen_standby(lv_event_t *e);
+void ui_event_UnifiedScreen_left(lv_event_t *e);
+void ui_event_UnifiedScreen_right(lv_event_t *e);
+
 #ifdef __cplusplus
 }
 #endif

@@ -130,6 +130,7 @@ class DefaultUI {
     lv_obj_t *previousScreen = nullptr;
 
     void updateNewBrewScreen();
+    void updateUnifiedScreen();
     void updateNewWaterScreen();
     void updateNewSteamScreen();
     void updateNewStandbyScreen();
