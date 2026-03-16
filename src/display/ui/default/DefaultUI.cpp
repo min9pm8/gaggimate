@@ -706,7 +706,7 @@ void DefaultUI::setupReactive() {
 
     // Brew screen temp update
     effect_mgr.use_effect(
-        [=] { return currentScreen == ui_NewBrewScreen; },
+        [=] { return currentScreen == ui_NewBrewScreen && ui_NewBrewScreen_tempLabel != NULL; },
         [=]() {
             char buf[16];
             snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
@@ -717,7 +717,7 @@ void DefaultUI::setupReactive() {
 
     // Brew screen pressure update
     effect_mgr.use_effect(
-        [=] { return currentScreen == ui_NewBrewScreen && pressureAvailable; },
+        [=] { return currentScreen == ui_NewBrewScreen && pressureAvailable && ui_NewBrewScreen_pressureLabel != NULL; },
         [=]() {
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f bar", pressure);
@@ -728,7 +728,7 @@ void DefaultUI::setupReactive() {
 
     // Water screen temp update
     effect_mgr.use_effect(
-        [=] { return currentScreen == ui_NewWaterScreen; },
+        [=] { return currentScreen == ui_NewWaterScreen && ui_NewWaterScreen_tempLabel != NULL; },
         [=]() {
             char buf[16];
             snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
@@ -747,7 +747,7 @@ void DefaultUI::setupReactive() {
 
     // Steam screen temp update
     effect_mgr.use_effect(
-        [=] { return currentScreen == ui_NewSteamScreen; },
+        [=] { return currentScreen == ui_NewSteamScreen && ui_NewSteamScreen_tempLabel != NULL; },
         [=]() {
             char buf[16];
             snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
@@ -769,7 +769,7 @@ void DefaultUI::setupReactive() {
 
     // Standby WiFi/BT icon states
     effect_mgr.use_effect(
-        [=] { return currentScreen == ui_NewStandbyScreen; },
+        [=] { return currentScreen == ui_NewStandbyScreen && ui_NewStandbyScreen_wifiIcon != NULL; },
         [=]() {
             bool wifiConnected = WiFi.status() == WL_CONNECTED;
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
@@ -973,7 +973,7 @@ void DefaultUI::updateStatusScreen() const {
 }
 
 void DefaultUI::updateNewBrewScreen() {
-    if (!isBrewing || currentScreen != ui_NewBrewScreen) return;
+    if (!isBrewing || currentScreen != ui_NewBrewScreen || ui_NewBrewScreen_timerLabel == NULL) return;
 
     Process *process = controller->getProcess();
     if (process == nullptr || process->getType() != MODE_BREW) {
