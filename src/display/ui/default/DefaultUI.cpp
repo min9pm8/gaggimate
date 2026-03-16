@@ -301,7 +301,10 @@ void DefaultUI::loop() {
     if (hadRerender) {
         lastInteraction = millis();
     }
-    if (currentScreen != ui_NewStandbyScreen && !active) {
+    // Only auto-standby from active mode screens, not from init/waiting screens
+    if (currentScreen != ui_NewStandbyScreen &&
+        currentScreen != ui_InitScreen &&
+        !active && !waitingForController) {
         const Settings &autoStandbySettings = controller->getSettings();
         if (autoStandbySettings.getStandbyTimeout() > 0 &&
             millis() - lastInteraction > (unsigned long)autoStandbySettings.getStandbyTimeout()) {
