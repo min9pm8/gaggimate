@@ -213,6 +213,7 @@ void WebUIPlugin::setupServer() {
         request->send(response);
     });
     server.on("/api/gitlab-blog/test", HTTP_POST, [this](AsyncWebServerRequest *request) { handleGitLabBlogTest(request); });
+    server.on("/api/gitlab-blog/publish", HTTP_POST, [this](AsyncWebServerRequest *request) { handleGitLabBlogPublish(request); });
     server.on(
         "/api/ota/upload", HTTP_POST,
         [this](AsyncWebServerRequest *request) { handleLocalOTAUpload(request); },
@@ -925,6 +926,30 @@ void WebUIPlugin::handleGitLabBlogTest(AsyncWebServerRequest *request) {
     http.end();
 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
+    serializeJson(doc, *response);
+    request->send(response);
+}
+
+void WebUIPlugin::handleGitLabBlogPublish(AsyncWebServerRequest *request) {
+    if (!controller->getSettings().isGitLabBlogActive()) {
+        AsyncResponseStream *response = request->beginResponseStream("application/json");
+        JsonDocument doc;
+        doc["success"] = false;
+        doc["message"] = "GitLab Blog plugin is not active";
+        serializeJson(doc, *response);
+        request->send(response);
+        return;
+    }
+
+    // Trigger publish via event system — GitLabBlogPlugin listens for this
+    // Events are synchronous, so publish completes before trigger returns
+    pluginManager->trigger("gitlab-blog:publish");
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    doc["success"] = gitlabLastCode == 201;
+    doc["message"] = gitlabLastMessage;
+    doc["httpCode"] = gitlabLastCode;
     serializeJson(doc, *response);
     request->send(response);
 }

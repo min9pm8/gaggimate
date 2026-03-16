@@ -53,8 +53,9 @@ class WebUIPlugin : public Plugin {
     // Core dump download
     void handleCoreDumpDownload(AsyncWebServerRequest *request);
 
-    // GitLab Blog test
+    // GitLab Blog
     void handleGitLabBlogTest(AsyncWebServerRequest *request);
+    void handleGitLabBlogPublish(AsyncWebServerRequest *request);
 
     // Local OTA upload
     void handleLocalOTAUpload(AsyncWebServerRequest *request);

@@ -33,18 +33,18 @@
 #define UI_STANDBY_ICON_SIZE       64
 #define UI_STANDBY_ICON_GAP        40
 
-#define UI_FLUSH_BTN_SIZE          48
-#define UI_FLUSH_BTN_ACTIVE_SIZE   56
-#define UI_BREW_BTN_SIZE           52
-#define UI_STOP_BTN_SIZE           48
-#define UI_PUMP_BTN_SIZE           50
+#define UI_FLUSH_BTN_SIZE          84
+#define UI_FLUSH_BTN_ACTIVE_SIZE   96
+#define UI_BREW_BTN_SIZE           90
+#define UI_STOP_BTN_SIZE           84
+#define UI_PUMP_BTN_SIZE           86
 
-#define UI_RING_OUTER_RADIUS       125
-#define UI_RING_OUTER_WIDTH        8
-#define UI_RING_INNER_RADIUS       108
-#define UI_RING_INNER_WIDTH        6
-#define UI_RING_SINGLE_RADIUS      118
-#define UI_RING_SINGLE_WIDTH       8
+#define UI_RING_OUTER_RADIUS       200
+#define UI_RING_OUTER_WIDTH        12
+#define UI_RING_INNER_RADIUS       178
+#define UI_RING_INNER_WIDTH        10
+#define UI_RING_SINGLE_RADIUS      190
+#define UI_RING_SINGLE_WIDTH       12
 
 #define UI_NAV_DOT_SIZE            5
 #define UI_NAV_DOT_GAP             5

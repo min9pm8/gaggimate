@@ -6,6 +6,8 @@ import homekitImage from '../../assets/homekit.png';
 function GitLabBlogCard({ formData, onChange }) {
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(false);
+  const [publishResult, setPublishResult] = useState(null);
+  const [publishing, setPublishing] = useState(false);
 
   const handleTest = async () => {
     setTesting(true);
@@ -18,6 +20,20 @@ function GitLabBlogCard({ formData, onChange }) {
       setTestResult({ success: false, message: 'Request failed - is the device connected?' });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    setPublishResult(null);
+    try {
+      const res = await fetch('/api/gitlab-blog/publish', { method: 'POST' });
+      const data = await res.json();
+      setPublishResult(data);
+    } catch {
+      setPublishResult({ success: false, message: 'Request failed - is the device connected?' });
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -98,7 +114,7 @@ function GitLabBlogCard({ formData, onChange }) {
               onChange={onChange('gitlabBlogPath')}
             />
           </div>
-          <div className='flex items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-3'>
             <button
               type='button'
               className='btn btn-outline btn-sm'
@@ -114,11 +130,33 @@ function GitLabBlogCard({ formData, onChange }) {
                 'Test Connection'
               )}
             </button>
+            <button
+              type='button'
+              className='btn btn-outline btn-sm'
+              onClick={handlePublish}
+              disabled={publishing}
+            >
+              {publishing ? (
+                <>
+                  <span className='loading loading-spinner loading-xs' />
+                  Publishing...
+                </>
+              ) : (
+                'Publish Last Shot'
+              )}
+            </button>
             {testResult && (
               <span
                 className={`text-sm font-medium ${testResult.success ? 'text-success' : 'text-error'}`}
               >
                 {testResult.message}
+              </span>
+            )}
+            {publishResult && (
+              <span
+                className={`text-sm font-medium ${publishResult.success ? 'text-success' : 'text-error'}`}
+              >
+                {publishResult.message}
               </span>
             )}
           </div>

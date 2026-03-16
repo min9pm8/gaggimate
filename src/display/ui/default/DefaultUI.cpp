@@ -776,11 +776,11 @@ void DefaultUI::setupReactive() {
         [=]() {
             bool wifiConnected = WiFi.status() == WL_CONNECTED;
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
-            lv_obj_set_style_img_recolor(ui_NewStandbyScreen_wifiIcon, wifiColor, LV_PART_MAIN);
+            lv_obj_set_style_text_color(ui_NewStandbyScreen_wifiIcon, wifiColor, LV_PART_MAIN);
             bool btConnected = !waitingForController;
             lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_SEC : UI_COLOR_ICON_DISCONNECTED;
-            lv_obj_set_style_img_recolor(ui_NewStandbyScreen_btIcon, btColor, LV_PART_MAIN);
-            lv_obj_set_style_img_recolor_opa(ui_NewStandbyScreen_btIcon,
+            lv_obj_set_style_text_color(ui_NewStandbyScreen_btIcon, btColor, LV_PART_MAIN);
+            lv_obj_set_style_text_opa(ui_NewStandbyScreen_btIcon,
                 btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
         },
         &waitingForController);
@@ -797,23 +797,7 @@ void DefaultUI::handleScreenChange() {
             setBrightness(settings.getMainBrightness());
         }
 
-        // Determine animation based on screen transition direction
-        lv_scr_load_anim_t anim = LV_SCR_LOAD_ANIM_FADE_ON;
-        int duration = 300;
-
-        if (previousScreen != nullptr) {
-            if ((*targetScreen == ui_NewWaterScreen && previousScreen == ui_NewBrewScreen) ||
-                (*targetScreen == ui_NewSteamScreen && previousScreen == ui_NewWaterScreen)) {
-                anim = LV_SCR_LOAD_ANIM_MOVE_LEFT;
-                duration = 250;
-            } else if ((*targetScreen == ui_NewBrewScreen && previousScreen == ui_NewWaterScreen) ||
-                       (*targetScreen == ui_NewWaterScreen && previousScreen == ui_NewSteamScreen)) {
-                anim = LV_SCR_LOAD_ANIM_MOVE_RIGHT;
-                duration = 250;
-            }
-        }
-
-        _ui_screen_change(targetScreen, anim, duration, 0, targetScreenInit);
+        _ui_screen_change(targetScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, targetScreenInit);
         lv_obj_del(current);
         rerender = true;
     }
