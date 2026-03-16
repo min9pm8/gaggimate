@@ -124,29 +124,37 @@ void DefaultUI::init() {
         mode = event.getInt("value");
         switch (mode) {
         case MODE_STANDBY:
-            changeScreen(&ui_StandbyScreen, &ui_StandbyScreen_screen_init);
+            changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
             break;
         case MODE_BREW:
-            changeScreen(&ui_BrewScreen, &ui_BrewScreen_screen_init);
+            changeScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init);
             break;
         case MODE_GRIND:
-            changeScreen(&ui_GrindScreen, &ui_GrindScreen_screen_init);
+            changeScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init);
             break;
         case MODE_STEAM:
-            changeScreen(&ui_SimpleProcessScreen, &ui_SimpleProcessScreen_screen_init);
+            changeScreen(&ui_NewSteamScreen, &ui_NewSteamScreen_screen_init);
             break;
         case MODE_WATER:
-            changeScreen(&ui_SimpleProcessScreen, &ui_SimpleProcessScreen_screen_init);
+            changeScreen(&ui_NewWaterScreen, &ui_NewWaterScreen_screen_init);
             break;
         default:
             break;
         };
     });
-    pluginManager->on("controller:brew:start",
-                      [this](Event const &event) { changeScreen(&ui_StatusScreen, &ui_StatusScreen_screen_init); });
+    pluginManager->on("controller:brew:start", [this](Event const &event) {
+        isBrewing = true;
+        isBrewComplete = false;
+        if (lv_scr_act() == ui_NewBrewScreen) {
+            ui_NewBrewScreen_set_brewing();
+        }
+    });
     pluginManager->on("controller:brew:clear", [this](Event const &event) {
-        if (lv_scr_act() == ui_StatusScreen) {
-            changeScreen(&ui_BrewScreen, &ui_BrewScreen_screen_init);
+        if (isBrewing && !isBrewComplete) {
+            isBrewing = false;
+            if (lv_scr_act() == ui_NewBrewScreen) {
+                ui_NewBrewScreen_set_idle();
+            }
         }
     });
     pluginManager->on("controller:bluetooth:waiting", [this](Event const &) {
@@ -158,8 +166,8 @@ void DefaultUI::init() {
         rerender = true;
         if (lv_scr_act() == ui_InitScreen) {
             Settings &settings = controller->getSettings();
-            settings.getStartupMode() == MODE_BREW ? changeScreen(&ui_BrewScreen, &ui_BrewScreen_screen_init)
-                                                   : changeScreen(&ui_StandbyScreen, &ui_StandbyScreen_screen_init);
+            settings.getStartupMode() == MODE_BREW ? changeScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init)
+                                                   : changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
         }
         pressureAvailable = controller->getSystemInfo().capabilities.pressure;
     });
@@ -248,6 +256,8 @@ void DefaultUI::loop() {
             updateStandbyScreen();
         if (lv_scr_act() == ui_StatusScreen)
             updateStatusScreen();
+        updateNewBrewScreen();
+        updateNewStandbyScreen();
         effect_mgr.evaluate_all();
     }
 
@@ -262,6 +272,7 @@ void DefaultUI::loopProfiles() {
 }
 
 void DefaultUI::changeScreen(lv_obj_t **screen, void (*target_init)()) {
+    previousScreen = currentScreen;
     targetScreen = screen;
     targetScreenInit = target_init;
     rerender = true;
@@ -642,20 +653,116 @@ void DefaultUI::setupReactive() {
     effect_mgr.use_effect([=] { return currentScreen == ui_StandbyScreen; },
                           [=]() { lv_img_set_src(ui_StandbyScreen_logo, christmasMode ? &ui_img_1510335 : &ui_img_logo_png); },
                           &christmasMode);
+
+    // === New screen reactive effects ===
+
+    // Brew screen temp update
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_NewBrewScreen; },
+        [=]() {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
+            lv_label_set_text(ui_NewBrewScreen_tempLabel, buf);
+            lv_arc_set_value(ui_NewBrewScreen_tempArc, currentTemp);
+        },
+        &currentTemp);
+
+    // Brew screen pressure update
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_NewBrewScreen && pressureAvailable; },
+        [=]() {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.1f bar", pressure);
+            lv_label_set_text(ui_NewBrewScreen_pressureLabel, buf);
+            lv_arc_set_value(ui_NewBrewScreen_pressureArc, (int)(pressure * 10));
+        },
+        &pressure);
+
+    // Water screen temp update
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_NewWaterScreen; },
+        [=]() {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
+            lv_label_set_text(ui_NewWaterScreen_tempLabel, buf);
+            lv_arc_set_value(ui_NewWaterScreen_tempArc, currentTemp);
+            int target = controller->getTargetTemp();
+            if (currentTemp >= target) {
+                lv_label_set_text(ui_NewWaterScreen_statusLabel, "ready");
+                lv_obj_set_style_text_color(ui_NewWaterScreen_statusLabel, UI_COLOR_GREEN, LV_PART_MAIN);
+            } else {
+                lv_label_set_text(ui_NewWaterScreen_statusLabel, "heating...");
+                lv_obj_set_style_text_color(ui_NewWaterScreen_statusLabel, UI_COLOR_BLUE, LV_PART_MAIN);
+            }
+        },
+        &currentTemp);
+
+    // Steam screen temp update
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_NewSteamScreen; },
+        [=]() {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
+            lv_label_set_text(ui_NewSteamScreen_tempLabel, buf);
+            lv_arc_set_value(ui_NewSteamScreen_tempArc, currentTemp);
+            int target = controller->getTargetTemp();
+            bool ready = currentTemp >= target;
+            lv_color_t ringColor = ready ? UI_COLOR_GREEN : UI_COLOR_RED;
+            lv_obj_set_style_arc_color(ui_NewSteamScreen_tempArc, ringColor, LV_PART_INDICATOR);
+            if (ready) {
+                lv_label_set_text(ui_NewSteamScreen_statusLabel, "ready");
+                lv_obj_set_style_text_color(ui_NewSteamScreen_statusLabel, UI_COLOR_GREEN, LV_PART_MAIN);
+            } else {
+                lv_label_set_text(ui_NewSteamScreen_statusLabel, "heating...");
+                lv_obj_set_style_text_color(ui_NewSteamScreen_statusLabel, UI_COLOR_RED, LV_PART_MAIN);
+            }
+        },
+        &currentTemp);
+
+    // Standby WiFi/BT icon states
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_NewStandbyScreen; },
+        [=]() {
+            bool wifiConnected = WiFi.status() == WL_CONNECTED;
+            lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
+            lv_obj_set_style_img_recolor(ui_NewStandbyScreen_wifiIcon, wifiColor, LV_PART_MAIN);
+            bool btConnected = !waitingForController;
+            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_SEC : UI_COLOR_ICON_DISCONNECTED;
+            lv_obj_set_style_img_recolor(ui_NewStandbyScreen_btIcon, btColor, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor_opa(ui_NewStandbyScreen_btIcon,
+                btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
+        },
+        &waitingForController);
 }
 
 void DefaultUI::handleScreenChange() {
     lv_obj_t *current = lv_scr_act();
 
     if (current != *targetScreen) {
-        if (*targetScreen == ui_StandbyScreen) {
+        if (*targetScreen == ui_StandbyScreen || *targetScreen == ui_NewStandbyScreen) {
             standbyEnterTime = millis();
-        } else if (current == ui_StandbyScreen) {
+        } else if (current == ui_StandbyScreen || current == ui_NewStandbyScreen) {
             const Settings &settings = controller->getSettings();
             setBrightness(settings.getMainBrightness());
         }
 
-        _ui_screen_change(targetScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, targetScreenInit);
+        // Determine animation based on screen transition direction
+        lv_scr_load_anim_t anim = LV_SCR_LOAD_ANIM_FADE_ON;
+        int duration = 300;
+
+        if (previousScreen != nullptr) {
+            if ((*targetScreen == ui_NewWaterScreen && previousScreen == ui_NewBrewScreen) ||
+                (*targetScreen == ui_NewSteamScreen && previousScreen == ui_NewWaterScreen)) {
+                anim = LV_SCR_LOAD_ANIM_MOVE_LEFT;
+                duration = 250;
+            } else if ((*targetScreen == ui_NewBrewScreen && previousScreen == ui_NewWaterScreen) ||
+                       (*targetScreen == ui_NewWaterScreen && previousScreen == ui_NewSteamScreen)) {
+                anim = LV_SCR_LOAD_ANIM_MOVE_RIGHT;
+                duration = 250;
+            }
+        }
+
+        _ui_screen_change(targetScreen, anim, duration, 0, targetScreenInit);
         lv_obj_del(current);
         rerender = true;
     }
@@ -814,6 +921,59 @@ void DefaultUI::updateStatusScreen() const {
             lv_label_set_text_fmt(ui_StatusScreen_brewVolume, "%.1lfg", brewProcess->currentVolume);
         }
         lv_imgbtn_set_src(ui_StatusScreen_pauseButton, LV_IMGBTN_STATE_RELEASED, nullptr, &ui_img_631115820, nullptr);
+    }
+}
+
+void DefaultUI::updateNewBrewScreen() {
+    if (!isBrewing || currentScreen != ui_NewBrewScreen) return;
+
+    Process *process = controller->getProcess();
+    if (process == nullptr || process->getType() != MODE_BREW) {
+        return;
+    }
+
+    auto *brewProcess = static_cast<BrewProcess *>(process);
+    if (brewProcess == nullptr) return;
+
+    unsigned long elapsed = (millis() - brewProcess->processStarted) / 1000;
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%lu:%02lu", elapsed / 60, elapsed % 60);
+    lv_label_set_text(ui_NewBrewScreen_timerLabel, buf);
+
+    if (!brewProcess->currentPhase.name.isEmpty()) {
+        lv_label_set_text(ui_NewBrewScreen_phaseLabel, brewProcess->currentPhase.name.c_str());
+    }
+
+    if (brewProcess->isComplete() && !isBrewComplete) {
+        isBrewComplete = true;
+        brewCompleteTime = millis();
+        ui_NewBrewScreen_set_complete();
+    }
+
+    // Auto-dismiss complete after 5 seconds
+    if (isBrewComplete && millis() - brewCompleteTime > UI_BREW_COMPLETE_DISMISS_MS) {
+        isBrewComplete = false;
+        isBrewing = false;
+        ui_NewBrewScreen_set_idle();
+    }
+}
+
+void DefaultUI::updateNewWaterScreen() {
+    // Placeholder for future water screen updates
+}
+
+void DefaultUI::updateNewSteamScreen() {
+    // Placeholder for future steam screen updates
+}
+
+void DefaultUI::updateNewStandbyScreen() {
+    // Handle standby brightness dimming for new standby screen
+    if (currentScreen == ui_NewStandbyScreen && standbyEnterTime > 0) {
+        const Settings &settings = controller->getSettings();
+        const unsigned long now = millis();
+        if (now - standbyEnterTime >= settings.getStandbyBrightnessTimeout()) {
+            setBrightness(settings.getStandbyBrightness());
+        }
     }
 }
 

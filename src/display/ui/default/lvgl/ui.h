@@ -39,6 +39,14 @@ extern "C" {
 #include "screens/ui_StandbyScreen.h"
 #include "screens/ui_StatusScreen.h"
 
+// New round-display screens
+#include "screens/ui_NewStandbyScreen.h"
+#include "screens/ui_NewBrewScreen.h"
+#include "screens/ui_NewWaterScreen.h"
+#include "screens/ui_NewSteamScreen.h"
+#include "ui_new_events.h"
+#include "ui_new_colors.h"
+
 ///////////////////// VARIABLES ////////////////////
 
 // EVENTS

@@ -122,6 +122,18 @@ class DefaultUI {
     std::vector<String> favoritedProfiles;
     int currentThemeMode = -1; // Force applyTheme on first loop
 
+    // New screen state
+    bool isFlushing = false;
+    bool isBrewing = false;
+    bool isBrewComplete = false;
+    unsigned long brewCompleteTime = 0;
+    lv_obj_t *previousScreen = nullptr;
+
+    void updateNewBrewScreen();
+    void updateNewWaterScreen();
+    void updateNewSteamScreen();
+    void updateNewStandbyScreen();
+
     // Screen change
     lv_obj_t **targetScreen = &ui_InitScreen;
     lv_obj_t *currentScreen = ui_InitScreen;
