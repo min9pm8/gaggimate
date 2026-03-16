@@ -28,15 +28,14 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_clear_flag(ui_NewBrewScreen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_NewBrewScreen, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewBrewScreen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_radius(ui_NewBrewScreen, LV_RADIUS_CIRCLE, LV_PART_MAIN);
 
-    // --- Mode label at top ---
+    // --- Mode label above nav dots ---
     ui_NewBrewScreen_modeLabel = lv_label_create(ui_NewBrewScreen);
     lv_label_set_text(ui_NewBrewScreen_modeLabel, "BREW");
     lv_obj_set_style_text_font(ui_NewBrewScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewBrewScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(ui_NewBrewScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewBrewScreen_modeLabel, LV_ALIGN_TOP_MID, 0, 40);
+    lv_obj_align(ui_NewBrewScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 
     // --- Outer arc (pressure) ---
     ui_NewBrewScreen_pressureArc = lv_arc_create(ui_NewBrewScreen);
@@ -75,7 +74,7 @@ void ui_NewBrewScreen_screen_init(void) {
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_NewBrewScreen);
     lv_obj_remove_style_all(center_stack);
-    lv_obj_set_size(center_stack, 120, 260);
+    lv_obj_set_size(center_stack, 200, 260);
     lv_obj_center(center_stack);
     lv_obj_set_flex_flow(center_stack, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(center_stack, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -92,7 +91,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_shadow_width(ui_NewBrewScreen_flushBtn, 0, LV_PART_MAIN);
     ui_NewBrewScreen_flushIcon = lv_label_create(ui_NewBrewScreen_flushBtn);
     lv_label_set_text(ui_NewBrewScreen_flushIcon, LV_SYMBOL_TINT);
-    lv_obj_set_style_text_font(ui_NewBrewScreen_flushIcon, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_NewBrewScreen_flushIcon, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewBrewScreen_flushIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_center(ui_NewBrewScreen_flushIcon);
     lv_obj_add_event_cb(ui_NewBrewScreen_flushBtn, ui_event_NewBrewScreen_flush, LV_EVENT_CLICKED, NULL);
@@ -137,7 +136,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_border_width(ui_NewBrewScreen_brewBtn, 0, LV_PART_MAIN);
     ui_NewBrewScreen_brewIcon = lv_label_create(ui_NewBrewScreen_brewBtn);
     lv_label_set_text(ui_NewBrewScreen_brewIcon, LV_SYMBOL_PLAY);
-    lv_obj_set_style_text_font(ui_NewBrewScreen_brewIcon, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_NewBrewScreen_brewIcon, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewBrewScreen_brewIcon, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_center(ui_NewBrewScreen_brewIcon);
     lv_obj_add_event_cb(ui_NewBrewScreen_brewBtn, ui_event_NewBrewScreen_brew, LV_EVENT_CLICKED, NULL);
@@ -161,7 +160,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_shadow_width(ui_NewBrewScreen_stopBtn, 0, LV_PART_MAIN);
     ui_NewBrewScreen_stopIcon = lv_label_create(ui_NewBrewScreen_stopBtn);
     lv_label_set_text(ui_NewBrewScreen_stopIcon, LV_SYMBOL_STOP);
-    lv_obj_set_style_text_font(ui_NewBrewScreen_stopIcon, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_NewBrewScreen_stopIcon, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewBrewScreen_stopIcon, UI_COLOR_RED, LV_PART_MAIN);
     lv_obj_center(ui_NewBrewScreen_stopIcon);
     lv_obj_add_flag(ui_NewBrewScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
@@ -176,7 +175,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_border_width(ui_NewBrewScreen_completeBtn, 0, LV_PART_MAIN);
     lv_obj_t *checkLabel = lv_label_create(ui_NewBrewScreen_completeBtn);
     lv_label_set_text(checkLabel, LV_SYMBOL_OK);
-    lv_obj_set_style_text_font(checkLabel, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(checkLabel, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(checkLabel, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_center(checkLabel);
     lv_obj_add_flag(ui_NewBrewScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
@@ -211,9 +210,6 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_radius(ui_NewBrewScreen_dot3, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewBrewScreen_dot3, UI_COLOR_MUTED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewBrewScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
-
-    // --- Gesture handler ---
-    lv_obj_add_event_cb(ui_NewBrewScreen, ui_event_NewBrewScreen_gesture, LV_EVENT_GESTURE, NULL);
 
     // Start in idle state
     ui_NewBrewScreen_set_idle();

@@ -19,15 +19,14 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_clear_flag(ui_NewWaterScreen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_NewWaterScreen, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewWaterScreen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_radius(ui_NewWaterScreen, LV_RADIUS_CIRCLE, LV_PART_MAIN);
 
-    // --- Mode label at top ---
+    // --- Mode label above nav dots ---
     ui_NewWaterScreen_modeLabel = lv_label_create(ui_NewWaterScreen);
     lv_label_set_text(ui_NewWaterScreen_modeLabel, "HOT WATER");
     lv_obj_set_style_text_font(ui_NewWaterScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewWaterScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(ui_NewWaterScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewWaterScreen_modeLabel, LV_ALIGN_TOP_MID, 0, 40);
+    lv_obj_align(ui_NewWaterScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 
     // --- Single arc (temperature) ---
     ui_NewWaterScreen_tempArc = lv_arc_create(ui_NewWaterScreen);
@@ -49,7 +48,7 @@ void ui_NewWaterScreen_screen_init(void) {
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_NewWaterScreen);
     lv_obj_remove_style_all(center_stack);
-    lv_obj_set_size(center_stack, 120, 200);
+    lv_obj_set_size(center_stack, 200, 200);
     lv_obj_center(center_stack);
     lv_obj_set_flex_flow(center_stack, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(center_stack, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -85,7 +84,7 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_set_style_border_width(ui_NewWaterScreen_pumpBtn, 0, LV_PART_MAIN);
     lv_obj_t *pumpIcon = lv_label_create(ui_NewWaterScreen_pumpBtn);
     lv_label_set_text(pumpIcon, LV_SYMBOL_TINT);
-    lv_obj_set_style_text_font(pumpIcon, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(pumpIcon, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(pumpIcon, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
     lv_obj_center(pumpIcon);
     lv_obj_add_event_cb(ui_NewWaterScreen_pumpBtn, ui_event_NewWaterScreen_pump, LV_EVENT_CLICKED, NULL);
@@ -120,6 +119,4 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewWaterScreen_dot3, UI_COLOR_MUTED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewWaterScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
 
-    // --- Gesture handler ---
-    lv_obj_add_event_cb(ui_NewWaterScreen, ui_event_NewWaterScreen_gesture, LV_EVENT_GESTURE, NULL);
 }

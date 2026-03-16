@@ -18,15 +18,14 @@ void ui_NewSteamScreen_screen_init(void) {
     lv_obj_clear_flag(ui_NewSteamScreen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_NewSteamScreen, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewSteamScreen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_radius(ui_NewSteamScreen, LV_RADIUS_CIRCLE, LV_PART_MAIN);
 
-    // --- Mode label at top ---
+    // --- Mode label above nav dots ---
     ui_NewSteamScreen_modeLabel = lv_label_create(ui_NewSteamScreen);
     lv_label_set_text(ui_NewSteamScreen_modeLabel, "STEAM");
     lv_obj_set_style_text_font(ui_NewSteamScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewSteamScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(ui_NewSteamScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewSteamScreen_modeLabel, LV_ALIGN_TOP_MID, 0, 40);
+    lv_obj_align(ui_NewSteamScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 
     // --- Single arc (temperature) ---
     ui_NewSteamScreen_tempArc = lv_arc_create(ui_NewSteamScreen);
@@ -48,7 +47,7 @@ void ui_NewSteamScreen_screen_init(void) {
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_NewSteamScreen);
     lv_obj_remove_style_all(center_stack);
-    lv_obj_set_size(center_stack, 120, 160);
+    lv_obj_set_size(center_stack, 200, 160);
     lv_obj_center(center_stack);
     lv_obj_set_flex_flow(center_stack, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(center_stack, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -102,6 +101,4 @@ void ui_NewSteamScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewSteamScreen_dot3, UI_COLOR_RED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewSteamScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
 
-    // --- Gesture handler ---
-    lv_obj_add_event_cb(ui_NewSteamScreen, ui_event_NewSteamScreen_gesture, LV_EVENT_GESTURE, NULL);
 }
