@@ -827,7 +827,7 @@ void DefaultUI::setupReactive() {
         [=] { return currentScreen == ui_UnifiedScreen && pressureAvailable && ui_UnifiedScreen_pressureLabel != NULL; },
         [=]() {
             char buf[16];
-            snprintf(buf, sizeof(buf), "%.1f bar", pressure);
+            snprintf(buf, sizeof(buf), "%.1f", pressure);
             lv_label_set_text(ui_UnifiedScreen_pressureLabel, buf);
             // Only update inner arc with pressure in brew mode (when inner arc is visible)
             if (!lv_obj_has_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN)) {
