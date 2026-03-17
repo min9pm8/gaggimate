@@ -33,6 +33,14 @@ extern lv_obj_t *ui_UnifiedScreen_phaseLabel;
 // Complete state
 extern lv_obj_t *ui_UnifiedScreen_completeBtn;
 
+// Standby mode overlay
+extern lv_obj_t *ui_UnifiedScreen_standbyContainer;
+extern lv_obj_t *ui_UnifiedScreen_wifiLabel;
+extern lv_obj_t *ui_UnifiedScreen_btLabel;
+
+// Clock
+extern lv_obj_t *ui_UnifiedScreen_clockLabel;
+
 
 void ui_UnifiedScreen_screen_init(void);
 
@@ -46,6 +54,7 @@ void ui_UnifiedScreen_set_complete(void);
 void ui_UnifiedScreen_set_mode_brew(void);
 void ui_UnifiedScreen_set_mode_water(void);
 void ui_UnifiedScreen_set_mode_steam(void);
+void ui_UnifiedScreen_set_mode_standby(void);
 
 #ifdef __cplusplus
 }

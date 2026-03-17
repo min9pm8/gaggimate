@@ -17,6 +17,10 @@ lv_obj_t *ui_UnifiedScreen_flushingLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_timerLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_phaseLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_completeBtn = NULL;
+lv_obj_t *ui_UnifiedScreen_standbyContainer = NULL;
+lv_obj_t *ui_UnifiedScreen_wifiLabel = NULL;
+lv_obj_t *ui_UnifiedScreen_btLabel = NULL;
+lv_obj_t *ui_UnifiedScreen_clockLabel = NULL;
 void ui_UnifiedScreen_screen_init(void) {
     ui_UnifiedScreen = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_UnifiedScreen, LV_OBJ_FLAG_SCROLLABLE);
@@ -189,6 +193,47 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_set_ext_click_area(rightZone, 10);
     lv_obj_add_event_cb(rightZone, ui_event_UnifiedScreen_tap_right, LV_EVENT_CLICKED, NULL);
 
+    // --- Standby overlay (hidden by default, covers arcs/center/tap zones) ---
+    ui_UnifiedScreen_standbyContainer = lv_obj_create(ui_UnifiedScreen);
+    lv_obj_remove_style_all(ui_UnifiedScreen_standbyContainer);
+    lv_obj_set_size(ui_UnifiedScreen_standbyContainer, 466, 466);
+    lv_obj_center(ui_UnifiedScreen_standbyContainer);
+    lv_obj_set_style_bg_color(ui_UnifiedScreen_standbyContainer, UI_COLOR_BG, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(ui_UnifiedScreen_standbyContainer, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
+
+    // WiFi/BT icons centered in standby container
+    lv_obj_t *iconRow = lv_obj_create(ui_UnifiedScreen_standbyContainer);
+    lv_obj_remove_style_all(iconRow);
+    lv_obj_set_size(iconRow, 200, 60);
+    lv_obj_center(iconRow);
+    lv_obj_set_flex_flow(iconRow, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(iconRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(iconRow, 30, LV_PART_MAIN);
+
+    ui_UnifiedScreen_wifiLabel = lv_label_create(iconRow);
+    lv_label_set_text(ui_UnifiedScreen_wifiLabel, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_font(ui_UnifiedScreen_wifiLabel, &lv_font_montserrat_48, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_wifiLabel, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
+
+    ui_UnifiedScreen_btLabel = lv_label_create(iconRow);
+    lv_label_set_text(ui_UnifiedScreen_btLabel, LV_SYMBOL_BLUETOOTH);
+    lv_obj_set_style_text_font(ui_UnifiedScreen_btLabel, &lv_font_montserrat_48, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_btLabel, UI_COLOR_STANDBY_ICON_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_opa(ui_UnifiedScreen_btLabel, UI_STANDBY_ICON_SEC_OPA, LV_PART_MAIN);
+
+    // Tap anywhere on standby → exit to brew
+    lv_obj_add_event_cb(ui_UnifiedScreen_standbyContainer, ui_event_UnifiedScreen_tap_standby_exit, LV_EVENT_CLICKED, NULL);
+
+    // --- Clock label (created LAST so it's always on top, even over standby) ---
+    ui_UnifiedScreen_clockLabel = lv_label_create(ui_UnifiedScreen);
+    lv_label_set_text(ui_UnifiedScreen_clockLabel, "");
+    lv_obj_set_style_text_font(ui_UnifiedScreen_clockLabel, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_GREEN, LV_PART_MAIN);
+    lv_obj_align(ui_UnifiedScreen_clockLabel, LV_ALIGN_BOTTOM_MID, 0, -45);
+
     // Start in idle brew mode
     ui_UnifiedScreen_set_idle();
 }
@@ -309,6 +354,9 @@ void ui_UnifiedScreen_set_complete(void) {
 // === Mode Switching ===
 
 void ui_UnifiedScreen_set_mode_brew(void) {
+    lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_GREEN, LV_PART_MAIN);
+
     // Outer arc = red/amber (temp)
     lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
     lv_arc_set_range(ui_UnifiedScreen_outerArc, UI_TEMP_BREW_MIN, UI_TEMP_BREW_MAX);
@@ -339,6 +387,9 @@ void ui_UnifiedScreen_set_mode_brew(void) {
 }
 
 void ui_UnifiedScreen_set_mode_water(void) {
+    lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_BLUE, LV_PART_MAIN);
+
     // Outer arc = blue (temp)
     lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_BLUE, LV_PART_INDICATOR);
     lv_arc_set_range(ui_UnifiedScreen_outerArc, UI_TEMP_WATER_MIN, UI_TEMP_WATER_MAX);
@@ -377,6 +428,9 @@ void ui_UnifiedScreen_set_mode_water(void) {
 }
 
 void ui_UnifiedScreen_set_mode_steam(void) {
+    lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_AMBER, LV_PART_MAIN);
+
     // Outer arc = amber (temp), turns green when ready
     lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_AMBER, LV_PART_INDICATOR);
     lv_arc_set_range(ui_UnifiedScreen_outerArc, UI_TEMP_STEAM_MIN, UI_TEMP_STEAM_MAX);
@@ -385,12 +439,13 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     // Inner arc hidden
     lv_obj_add_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN);
 
-    // Action btn = non-clickable steam indicator
+    // Action btn = non-clickable steam indicator (solid amber filled droplet)
     lv_obj_clear_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_style_bg_color(ui_UnifiedScreen_actionBtn, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(ui_UnifiedScreen_actionBtn, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_shadow_color(ui_UnifiedScreen_actionBtn, UI_COLOR_AMBER, LV_PART_MAIN);
-    lv_label_set_text(ui_UnifiedScreen_actionIcon, LV_SYMBOL_UP);
+    lv_label_set_text(ui_UnifiedScreen_actionIcon, LV_SYMBOL_TINT);
     lv_obj_set_style_text_color(ui_UnifiedScreen_actionIcon, UI_COLOR_BG, LV_PART_MAIN);
 
     // Pressure hidden, flush hidden
@@ -412,4 +467,14 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_INDICATOR);
     lv_obj_set_style_opa(ui_UnifiedScreen_tempLabel, LV_OPA_COVER, LV_PART_MAIN);
+}
+
+void ui_UnifiedScreen_set_mode_standby(void) {
+    // Show standby overlay (covers arcs, center stack, tap zones)
+    lv_obj_clear_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(ui_UnifiedScreen_standbyContainer);
+    // Keep clock on top of standby container
+    lv_obj_move_foreground(ui_UnifiedScreen_clockLabel);
+    // Set clock color to muted for standby
+    lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_TEXT_TER, LV_PART_MAIN);
 }

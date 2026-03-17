@@ -115,12 +115,6 @@ void ui_event_UnifiedScreen_complete(lv_event_t *e) {
     ui_UnifiedScreen_set_idle();
 }
 
-// Deferred standby — runs after tap event is fully processed
-static void deferred_go_standby(void *data) {
-    (void)data;
-    controller.setMode(MODE_STANDBY);
-}
-
 // Tap left zone: Brew→Steam, Steam→Standby, Water→Brew
 void ui_event_UnifiedScreen_tap_left(lv_event_t *e) {
     if (currentUIMode == MODE_BREW) {
@@ -129,7 +123,10 @@ void ui_event_UnifiedScreen_tap_left(lv_event_t *e) {
         ui_UnifiedScreen_set_mode_steam();
         controller.getUI()->markDirty();
     } else if (currentUIMode == MODE_STEAM) {
-        lv_async_call(deferred_go_standby, NULL);
+        currentUIMode = MODE_STANDBY;
+        controller.setMode(MODE_STANDBY);
+        ui_UnifiedScreen_set_mode_standby();
+        controller.getUI()->markDirty();
     } else if (currentUIMode == MODE_WATER) {
         currentUIMode = MODE_BREW;
         controller.setMode(MODE_BREW);
@@ -151,7 +148,18 @@ void ui_event_UnifiedScreen_tap_right(lv_event_t *e) {
         ui_UnifiedScreen_set_mode_brew();
         controller.getUI()->markDirty();
     } else if (currentUIMode == MODE_WATER) {
-        lv_async_call(deferred_go_standby, NULL);
+        currentUIMode = MODE_STANDBY;
+        controller.setMode(MODE_STANDBY);
+        ui_UnifiedScreen_set_mode_standby();
+        controller.getUI()->markDirty();
     }
+}
+
+// Tap anywhere on standby overlay → exit to brew mode
+void ui_event_UnifiedScreen_tap_standby_exit(lv_event_t *e) {
+    currentUIMode = MODE_BREW;
+    controller.setMode(MODE_BREW);
+    ui_UnifiedScreen_set_mode_brew();
+    controller.getUI()->markDirty();
 }
 

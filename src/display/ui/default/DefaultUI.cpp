@@ -124,7 +124,11 @@ void DefaultUI::init() {
         mode = event.getInt("value");
         switch (mode) {
         case MODE_STANDBY:
-            changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
+            if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
+                ui_UnifiedScreen_set_mode_standby();
+            } else {
+                changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
+            }
             break;
         case MODE_BREW:
         case MODE_GRIND:
@@ -282,6 +286,24 @@ void DefaultUI::loop() {
         updateNewBrewScreen();
         updateUnifiedScreen();
         updateNewStandbyScreen();
+
+        // Update clock on unified screen
+        if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_clockLabel != NULL) {
+            if (WiFi.status() == WL_CONNECTED) {
+                time_t now;
+                struct tm timeinfo;
+                time(&now);
+                localtime_r(&now, &timeinfo);
+                if (getLocalTime(&timeinfo, 500)) {
+                    char timeStr[9];
+                    Settings &settings = controller->getSettings();
+                    const char *format = settings.isClock24hFormat() ? "%H:%M" : "%I:%M %p";
+                    strftime(timeStr, sizeof(timeStr), format, &timeinfo);
+                    lv_label_set_text(ui_UnifiedScreen_clockLabel, timeStr);
+                }
+            }
+        }
+
         effect_mgr.evaluate_all();
     }
 
@@ -322,8 +344,10 @@ void DefaultUI::loop() {
     if (hadRerender) {
         lastInteraction = millis();
     }
-    // Only auto-standby from active mode screens, not from init/waiting screens
-    if (currentScreen != ui_NewStandbyScreen &&
+    // Only auto-standby from active mode screens, not from init/waiting/already-standby screens
+    bool alreadyStandby = (currentScreen == ui_NewStandbyScreen) ||
+        (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY);
+    if (!alreadyStandby &&
         currentScreen != ui_InitScreen &&
         !active && !waitingForController) {
         const Settings &autoStandbySettings = controller->getSettings();
@@ -850,6 +874,21 @@ void DefaultUI::setupReactive() {
                 btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
         },
         &waitingForController);
+
+    // Unified screen standby WiFi/BT icon states
+    effect_mgr.use_effect(
+        [=] { return currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_wifiLabel != NULL; },
+        [=]() {
+            bool wifiConnected = WiFi.status() == WL_CONNECTED;
+            lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
+            lv_obj_set_style_text_color(ui_UnifiedScreen_wifiLabel, wifiColor, LV_PART_MAIN);
+            bool btConnected = !waitingForController;
+            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_SEC : UI_COLOR_ICON_DISCONNECTED;
+            lv_obj_set_style_text_color(ui_UnifiedScreen_btLabel, btColor, LV_PART_MAIN);
+            lv_obj_set_style_text_opa(ui_UnifiedScreen_btLabel,
+                btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
+        },
+        &waitingForController);
 }
 
 void DefaultUI::handleScreenChange() {
@@ -869,6 +908,9 @@ void DefaultUI::handleScreenChange() {
         // After unified screen init, apply the correct mode
         if (*targetScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
             switch (mode) {
+            case MODE_STANDBY:
+                ui_UnifiedScreen_set_mode_standby();
+                break;
             case MODE_WATER:
                 ui_UnifiedScreen_set_mode_water();
                 break;

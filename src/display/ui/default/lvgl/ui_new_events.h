@@ -24,6 +24,7 @@ void ui_event_UnifiedScreen_stop(lv_event_t *e);
 void ui_event_UnifiedScreen_complete(lv_event_t *e);
 void ui_event_UnifiedScreen_tap_left(lv_event_t *e);
 void ui_event_UnifiedScreen_tap_right(lv_event_t *e);
+void ui_event_UnifiedScreen_tap_standby_exit(lv_event_t *e);
 
 
 #ifdef __cplusplus
