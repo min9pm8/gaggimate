@@ -109,12 +109,19 @@ void ui_event_UnifiedScreen_complete(lv_event_t *e) {
     ui_UnifiedScreen_set_idle();
 }
 
+// Deferred standby — called by lv_async_call after gesture is fully processed
+static void deferred_go_standby(void *data) {
+    (void)data;
+    controller.setMode(MODE_STANDBY);
+}
+
 void ui_event_UnifiedScreen_standby(lv_event_t *e) {
     // Prevent double-tap by hiding button immediately
     if (ui_UnifiedScreen_standbyBtn != NULL) {
         lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
     }
-    controller.setMode(MODE_STANDBY);
+    // Defer the screen change to after this event is processed
+    lv_async_call(deferred_go_standby, NULL);
 }
 
 // Swipe gesture navigation on unified screen
@@ -124,32 +131,28 @@ void ui_event_UnifiedScreen_gesture(lv_event_t *e) {
     lv_indev_t *indev = lv_indev_get_act();
     if (indev == NULL) return;
     lv_dir_t dir = lv_indev_get_gesture_dir(indev);
-    // NOTE: Do NOT call lv_indev_wait_release — it causes crashes on screen transitions
+    // NOTE: Do NOT call lv_indev_wait_release — it causes crashes
 
     if (dir == LV_DIR_LEFT) {
-        // Brew → Water, Water → Standby, Steam → no-op
         if (currentUIMode == MODE_BREW) {
             currentUIMode = MODE_WATER;
             controller.setMode(MODE_WATER);
             ui_UnifiedScreen_set_mode_water();
             controller.getUI()->markDirty();
         } else if (currentUIMode == MODE_WATER) {
-            // Water → Standby
-            controller.setMode(MODE_STANDBY);
+            // Defer standby transition — screen change must happen after gesture completes
+            lv_async_call(deferred_go_standby, NULL);
         }
-        // Steam left = no-op
     } else if (dir == LV_DIR_RIGHT) {
-        // Brew → Steam, Steam → Standby, Water → no-op
         if (currentUIMode == MODE_BREW) {
             currentUIMode = MODE_STEAM;
             controller.setMode(MODE_STEAM);
             ui_UnifiedScreen_set_mode_steam();
             controller.getUI()->markDirty();
         } else if (currentUIMode == MODE_STEAM) {
-            // Steam → Standby
-            controller.setMode(MODE_STANDBY);
+            // Defer standby transition
+            lv_async_call(deferred_go_standby, NULL);
         }
-        // Water right = no-op
     }
 }
 
