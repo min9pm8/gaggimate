@@ -57,14 +57,24 @@ void ui_NewStandbyScreen_screen_init(void) {
     lv_obj_add_flag(ui_NewStandbyScreen_waterZone, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(ui_NewStandbyScreen_waterZone, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *waterIcon = lv_label_create(ui_NewStandbyScreen_waterZone);
+    lv_obj_t *waterCircle = lv_obj_create(ui_NewStandbyScreen_waterZone);
+    lv_obj_remove_style_all(waterCircle);
+    lv_obj_set_size(waterCircle, 100, 100);
+    lv_obj_set_style_radius(waterCircle, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(waterCircle, UI_COLOR_BLUE, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(waterCircle, UI_OPA(10), LV_PART_MAIN);
+    lv_obj_set_style_border_color(waterCircle, UI_COLOR_BLUE, LV_PART_MAIN);
+    lv_obj_set_style_border_width(waterCircle, 2, LV_PART_MAIN);
+    lv_obj_clear_flag(waterCircle, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *waterIcon = lv_label_create(waterCircle);
     lv_label_set_text(waterIcon, LV_SYMBOL_TINT);
     lv_obj_set_style_text_font(waterIcon, &lv_font_montserrat_48, LV_PART_MAIN);
     lv_obj_set_style_text_color(waterIcon, UI_COLOR_BLUE, LV_PART_MAIN);
+    lv_obj_center(waterIcon);
 
     lv_obj_t *waterLabel = lv_label_create(ui_NewStandbyScreen_waterZone);
     lv_label_set_text(waterLabel, "WATER");
-    lv_obj_set_style_text_font(waterLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(waterLabel, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_color(waterLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(waterLabel, 2, LV_PART_MAIN);
 
@@ -80,14 +90,24 @@ void ui_NewStandbyScreen_screen_init(void) {
     lv_obj_add_flag(ui_NewStandbyScreen_brewZone, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(ui_NewStandbyScreen_brewZone, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *brewIcon = lv_label_create(ui_NewStandbyScreen_brewZone);
+    lv_obj_t *brewCircle = lv_obj_create(ui_NewStandbyScreen_brewZone);
+    lv_obj_remove_style_all(brewCircle);
+    lv_obj_set_size(brewCircle, 100, 100);
+    lv_obj_set_style_radius(brewCircle, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(brewCircle, UI_COLOR_GREEN, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(brewCircle, UI_OPA(10), LV_PART_MAIN);
+    lv_obj_set_style_border_color(brewCircle, UI_COLOR_GREEN, LV_PART_MAIN);
+    lv_obj_set_style_border_width(brewCircle, 2, LV_PART_MAIN);
+    lv_obj_clear_flag(brewCircle, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *brewIcon = lv_label_create(brewCircle);
     lv_label_set_text(brewIcon, LV_SYMBOL_PLAY);
     lv_obj_set_style_text_font(brewIcon, &lv_font_montserrat_48, LV_PART_MAIN);
     lv_obj_set_style_text_color(brewIcon, UI_COLOR_GREEN, LV_PART_MAIN);
+    lv_obj_center(brewIcon);
 
     lv_obj_t *brewLabel = lv_label_create(ui_NewStandbyScreen_brewZone);
     lv_label_set_text(brewLabel, "BREW");
-    lv_obj_set_style_text_font(brewLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(brewLabel, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_color(brewLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(brewLabel, 2, LV_PART_MAIN);
 
@@ -103,14 +123,24 @@ void ui_NewStandbyScreen_screen_init(void) {
     lv_obj_add_flag(ui_NewStandbyScreen_steamZone, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(ui_NewStandbyScreen_steamZone, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *steamIcon = lv_label_create(ui_NewStandbyScreen_steamZone);
+    lv_obj_t *steamCircle = lv_obj_create(ui_NewStandbyScreen_steamZone);
+    lv_obj_remove_style_all(steamCircle);
+    lv_obj_set_size(steamCircle, 100, 100);
+    lv_obj_set_style_radius(steamCircle, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(steamCircle, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(steamCircle, UI_OPA(10), LV_PART_MAIN);
+    lv_obj_set_style_border_color(steamCircle, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(steamCircle, 2, LV_PART_MAIN);
+    lv_obj_clear_flag(steamCircle, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *steamIcon = lv_label_create(steamCircle);
     lv_label_set_text(steamIcon, LV_SYMBOL_UP);
     lv_obj_set_style_text_font(steamIcon, &lv_font_montserrat_48, LV_PART_MAIN);
     lv_obj_set_style_text_color(steamIcon, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_obj_center(steamIcon);
 
     lv_obj_t *steamLabel = lv_label_create(ui_NewStandbyScreen_steamZone);
     lv_label_set_text(steamLabel, "STEAM");
-    lv_obj_set_style_text_font(steamLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(steamLabel, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_color(steamLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(steamLabel, 2, LV_PART_MAIN);
 

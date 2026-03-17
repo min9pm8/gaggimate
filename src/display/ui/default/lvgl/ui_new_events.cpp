@@ -171,13 +171,3 @@ void ui_event_UnifiedScreen_right(lv_event_t *e) {
     controller.getUI()->markDirty();
 }
 
-// Swipe up on unified screen -> standby
-void ui_event_UnifiedScreen_gesture(lv_event_t *e) {
-    lv_indev_t *indev = lv_indev_get_act();
-    if (indev == NULL) return;
-    lv_dir_t dir = lv_indev_get_gesture_dir(indev);
-    if (dir == LV_DIR_TOP) {
-        lv_indev_wait_release(indev);
-        controller.setMode(MODE_STANDBY);
-    }
-}

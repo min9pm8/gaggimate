@@ -28,7 +28,7 @@ void ui_event_UnifiedScreen_complete(lv_event_t *e);
 void ui_event_UnifiedScreen_standby(lv_event_t *e);
 void ui_event_UnifiedScreen_left(lv_event_t *e);
 void ui_event_UnifiedScreen_right(lv_event_t *e);
-void ui_event_UnifiedScreen_gesture(lv_event_t *e);
+
 
 #ifdef __cplusplus
 }
