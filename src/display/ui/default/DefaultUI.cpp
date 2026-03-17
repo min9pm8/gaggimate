@@ -806,8 +806,8 @@ void DefaultUI::setupReactive() {
             lv_label_set_text(ui_UnifiedScreen_tempLabel, buf);
             // Update the appropriate arc based on mode
             if (!lv_obj_has_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN)) {
-                // Brew mode: inner arc is temp
-                lv_arc_set_value(ui_UnifiedScreen_innerArc, currentTemp);
+                // Brew mode: outer arc is temp (red/amber)
+                lv_arc_set_value(ui_UnifiedScreen_outerArc, currentTemp);
             } else {
                 // Water/Steam mode: outer arc is temp
                 lv_arc_set_value(ui_UnifiedScreen_outerArc, currentTemp);
@@ -829,9 +829,9 @@ void DefaultUI::setupReactive() {
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f bar", pressure);
             lv_label_set_text(ui_UnifiedScreen_pressureLabel, buf);
-            // Only update outer arc with pressure in brew mode (when inner arc is visible)
+            // Only update inner arc with pressure in brew mode (when inner arc is visible)
             if (!lv_obj_has_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN)) {
-                lv_arc_set_value(ui_UnifiedScreen_outerArc, (int)(pressure * 10));
+                lv_arc_set_value(ui_UnifiedScreen_innerArc, (int)(pressure * 10));
             }
         },
         &pressure);

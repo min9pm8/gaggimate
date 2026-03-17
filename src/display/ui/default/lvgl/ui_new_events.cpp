@@ -111,8 +111,9 @@ void ui_event_UnifiedScreen_complete(lv_event_t *e) {
 }
 
 void ui_event_UnifiedScreen_standby(lv_event_t *e) {
-    controller.deactivate();
-    controller.activateStandby();
+    // Prevent double-tap by hiding button immediately
+    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
+    controller.setMode(MODE_STANDBY);
 }
 
 void ui_event_UnifiedScreen_left(lv_event_t *e) {
