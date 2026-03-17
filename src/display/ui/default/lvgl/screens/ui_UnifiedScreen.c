@@ -230,7 +230,7 @@ void ui_UnifiedScreen_screen_init(void) {
     // --- Clock label (created LAST so it's always on top, even over standby) ---
     ui_UnifiedScreen_clockLabel = lv_label_create(ui_UnifiedScreen);
     lv_label_set_text(ui_UnifiedScreen_clockLabel, "");
-    lv_obj_set_style_text_font(ui_UnifiedScreen_clockLabel, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_UnifiedScreen_clockLabel, &lv_font_montserrat_24, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_UnifiedScreen_clockLabel, UI_COLOR_GREEN, LV_PART_MAIN);
     lv_obj_align(ui_UnifiedScreen_clockLabel, LV_ALIGN_BOTTOM_MID, 0, -45);
 

@@ -289,18 +289,15 @@ void DefaultUI::loop() {
 
         // Update clock on unified screen
         if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_clockLabel != NULL) {
-            if (WiFi.status() == WL_CONNECTED) {
-                time_t now;
+            time_t now = time(NULL);
+            if (now > 1000000000) { // NTP has synced (timestamp is reasonable)
                 struct tm timeinfo;
-                time(&now);
                 localtime_r(&now, &timeinfo);
-                if (getLocalTime(&timeinfo, 500)) {
-                    char timeStr[9];
-                    Settings &settings = controller->getSettings();
-                    const char *format = settings.isClock24hFormat() ? "%H:%M" : "%I:%M %p";
-                    strftime(timeStr, sizeof(timeStr), format, &timeinfo);
-                    lv_label_set_text(ui_UnifiedScreen_clockLabel, timeStr);
-                }
+                char timeStr[12];
+                Settings &settings = controller->getSettings();
+                const char *format = settings.isClock24hFormat() ? "%H:%M" : "%I:%M %p";
+                strftime(timeStr, sizeof(timeStr), format, &timeinfo);
+                lv_label_set_text(ui_UnifiedScreen_clockLabel, timeStr);
             }
         }
 
