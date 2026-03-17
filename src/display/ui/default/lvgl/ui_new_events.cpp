@@ -9,10 +9,16 @@
 
 static int currentUIMode = MODE_BREW;
 
+// Deferred brew — runs after tap event is fully processed
+static void deferred_go_brew(void *data) {
+    (void)data;
+    controller.setMode(MODE_BREW);
+}
+
 // --- Standby: tap anywhere → Unified screen (brew mode) ---
 void ui_event_NewStandbyScreen(lv_event_t *e) {
     currentUIMode = MODE_BREW;
-    controller.setMode(MODE_BREW);
+    lv_async_call(deferred_go_brew, NULL);
 }
 
 // --- Brew: swipe navigation ---
@@ -109,50 +115,43 @@ void ui_event_UnifiedScreen_complete(lv_event_t *e) {
     ui_UnifiedScreen_set_idle();
 }
 
-// Deferred standby — called by lv_async_call after gesture is fully processed
+// Deferred standby — runs after tap event is fully processed
 static void deferred_go_standby(void *data) {
     (void)data;
     controller.setMode(MODE_STANDBY);
 }
 
-void ui_event_UnifiedScreen_standby(lv_event_t *e) {
-    // Prevent double-tap by hiding button immediately
-    if (ui_UnifiedScreen_standbyBtn != NULL) {
-        lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
+// Tap left zone: Brew→Steam, Steam→Standby, Water→Brew
+void ui_event_UnifiedScreen_tap_left(lv_event_t *e) {
+    if (currentUIMode == MODE_BREW) {
+        currentUIMode = MODE_STEAM;
+        controller.setMode(MODE_STEAM);
+        ui_UnifiedScreen_set_mode_steam();
+        controller.getUI()->markDirty();
+    } else if (currentUIMode == MODE_STEAM) {
+        lv_async_call(deferred_go_standby, NULL);
+    } else if (currentUIMode == MODE_WATER) {
+        currentUIMode = MODE_BREW;
+        controller.setMode(MODE_BREW);
+        ui_UnifiedScreen_set_mode_brew();
+        controller.getUI()->markDirty();
     }
-    // Defer the screen change to after this event is processed
-    lv_async_call(deferred_go_standby, NULL);
 }
 
-// Swipe gesture navigation on unified screen
-// Brew → swipe left → Water → swipe left → Standby
-// Brew → swipe right → Steam → swipe right → Standby
-void ui_event_UnifiedScreen_gesture(lv_event_t *e) {
-    lv_indev_t *indev = lv_indev_get_act();
-    if (indev == NULL) return;
-    lv_dir_t dir = lv_indev_get_gesture_dir(indev);
-    // NOTE: Do NOT call lv_indev_wait_release — it causes crashes
-
-    if (dir == LV_DIR_LEFT) {
-        if (currentUIMode == MODE_BREW) {
-            currentUIMode = MODE_WATER;
-            controller.setMode(MODE_WATER);
-            ui_UnifiedScreen_set_mode_water();
-            controller.getUI()->markDirty();
-        } else if (currentUIMode == MODE_WATER) {
-            // Defer standby transition — screen change must happen after gesture completes
-            lv_async_call(deferred_go_standby, NULL);
-        }
-    } else if (dir == LV_DIR_RIGHT) {
-        if (currentUIMode == MODE_BREW) {
-            currentUIMode = MODE_STEAM;
-            controller.setMode(MODE_STEAM);
-            ui_UnifiedScreen_set_mode_steam();
-            controller.getUI()->markDirty();
-        } else if (currentUIMode == MODE_STEAM) {
-            // Defer standby transition
-            lv_async_call(deferred_go_standby, NULL);
-        }
+// Tap right zone: Brew→Water, Steam→Brew, Water→Standby
+void ui_event_UnifiedScreen_tap_right(lv_event_t *e) {
+    if (currentUIMode == MODE_BREW) {
+        currentUIMode = MODE_WATER;
+        controller.setMode(MODE_WATER);
+        ui_UnifiedScreen_set_mode_water();
+        controller.getUI()->markDirty();
+    } else if (currentUIMode == MODE_STEAM) {
+        currentUIMode = MODE_BREW;
+        controller.setMode(MODE_BREW);
+        ui_UnifiedScreen_set_mode_brew();
+        controller.getUI()->markDirty();
+    } else if (currentUIMode == MODE_WATER) {
+        lv_async_call(deferred_go_standby, NULL);
     }
 }
 

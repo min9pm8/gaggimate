@@ -33,8 +33,6 @@ extern lv_obj_t *ui_UnifiedScreen_phaseLabel;
 // Complete state
 extern lv_obj_t *ui_UnifiedScreen_completeBtn;
 
-// Standby button
-extern lv_obj_t *ui_UnifiedScreen_standbyBtn;
 
 void ui_UnifiedScreen_screen_init(void);
 

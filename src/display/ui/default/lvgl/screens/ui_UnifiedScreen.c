@@ -17,7 +17,6 @@ lv_obj_t *ui_UnifiedScreen_flushingLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_timerLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_phaseLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_completeBtn = NULL;
-lv_obj_t *ui_UnifiedScreen_standbyBtn = NULL;
 void ui_UnifiedScreen_screen_init(void) {
     ui_UnifiedScreen = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_UnifiedScreen, LV_OBJ_FLAG_SCROLLABLE);
@@ -59,9 +58,6 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_set_style_arc_color(ui_UnifiedScreen_innerArc, UI_COLOR_BLUE, LV_PART_INDICATOR);
     lv_obj_set_style_arc_width(ui_UnifiedScreen_innerArc, UI_RING_INNER_WIDTH, LV_PART_INDICATOR);
     lv_obj_set_style_arc_rounded(ui_UnifiedScreen_innerArc, true, LV_PART_INDICATOR);
-
-    // --- Gesture handler for swipe navigation ---
-    lv_obj_add_event_cb(ui_UnifiedScreen, ui_event_UnifiedScreen_gesture, LV_EVENT_GESTURE, NULL);
 
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_UnifiedScreen);
@@ -173,24 +169,25 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_event_cb(ui_UnifiedScreen_completeBtn, ui_event_UnifiedScreen_complete, LV_EVENT_CLICKED, NULL);
 
-    // --- HOME button (bottom center, always visible) ---
-    ui_UnifiedScreen_standbyBtn = lv_btn_create(ui_UnifiedScreen);
-    lv_obj_set_size(ui_UnifiedScreen_standbyBtn, 60, 60);
-    lv_obj_align(ui_UnifiedScreen_standbyBtn, LV_ALIGN_BOTTOM_MID, 0, -30);
-    lv_obj_set_style_radius(ui_UnifiedScreen_standbyBtn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_SURFACE, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(ui_UnifiedScreen_standbyBtn, UI_OPA(30), LV_PART_MAIN);
-    lv_obj_set_style_border_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_BTN_BORDER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(ui_UnifiedScreen_standbyBtn, 2, LV_PART_MAIN);
-    lv_obj_set_style_shadow_width(ui_UnifiedScreen_standbyBtn, 0, LV_PART_MAIN);
-    lv_obj_set_ext_click_area(ui_UnifiedScreen_standbyBtn, 20);
-    lv_obj_t *homeIcon = lv_label_create(ui_UnifiedScreen_standbyBtn);
-    lv_label_set_text(homeIcon, LV_SYMBOL_HOME);
-    lv_obj_set_style_text_font(homeIcon, &lv_font_montserrat_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(homeIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
-    lv_obj_center(homeIcon);
-    lv_obj_add_event_cb(ui_UnifiedScreen_standbyBtn, ui_event_UnifiedScreen_standby, LV_EVENT_CLICKED, NULL);
-    lv_obj_move_foreground(ui_UnifiedScreen_standbyBtn);
+    // --- Left tap zone (100px wide strip on left edge) ---
+    lv_obj_t *leftZone = lv_obj_create(ui_UnifiedScreen);
+    lv_obj_remove_style_all(leftZone);
+    lv_obj_set_size(leftZone, 100, 350);
+    lv_obj_align(leftZone, LV_ALIGN_LEFT_MID, 0, -20);
+    lv_obj_add_flag(leftZone, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(leftZone, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_ext_click_area(leftZone, 10);
+    lv_obj_add_event_cb(leftZone, ui_event_UnifiedScreen_tap_left, LV_EVENT_CLICKED, NULL);
+
+    // --- Right tap zone (100px wide strip on right edge) ---
+    lv_obj_t *rightZone = lv_obj_create(ui_UnifiedScreen);
+    lv_obj_remove_style_all(rightZone);
+    lv_obj_set_size(rightZone, 100, 350);
+    lv_obj_align(rightZone, LV_ALIGN_RIGHT_MID, 0, -20);
+    lv_obj_add_flag(rightZone, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(rightZone, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_ext_click_area(rightZone, 10);
+    lv_obj_add_event_cb(rightZone, ui_event_UnifiedScreen_tap_right, LV_EVENT_CLICKED, NULL);
 
     // Start in idle brew mode
     ui_UnifiedScreen_set_idle();
@@ -203,7 +200,7 @@ void ui_UnifiedScreen_set_idle(void) {
     lv_obj_clear_flag(ui_UnifiedScreen_tempLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_pressureLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_HIDDEN);
-    // standbyBtn (home) always visible — no hide/show needed
+
 
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
@@ -245,7 +242,7 @@ void ui_UnifiedScreen_set_flushing(void) {
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
-    // standbyBtn (home) always visible
+
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
 
     // Flush button active style
@@ -279,7 +276,7 @@ void ui_UnifiedScreen_set_brewing(void) {
     lv_obj_add_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
-    // standbyBtn (home) always visible
+
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
 
     // Restore ring and text opacity
@@ -302,7 +299,7 @@ void ui_UnifiedScreen_set_complete(void) {
     lv_obj_add_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
-    // standbyBtn (home) always visible
+
 
     // Timer turns white, phase shows COMPLETE
     lv_obj_set_style_text_color(ui_UnifiedScreen_timerLabel, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
@@ -364,7 +361,7 @@ void ui_UnifiedScreen_set_mode_water(void) {
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
 
     // Hide brew-specific
-    // standbyBtn (home) always visible
+
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
@@ -402,7 +399,7 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
 
     // Hide brew-specific
-    // standbyBtn (home) always visible
+
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
