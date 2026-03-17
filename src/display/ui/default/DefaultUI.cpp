@@ -796,14 +796,13 @@ void DefaultUI::setupReactive() {
         [=] { return currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL; },
         [=]() {
             char buf[16];
-            // Update target temp label
+            // Update current/target temp
             int target = controller->getTargetTemp();
             if (target > 0) {
-                snprintf(buf, sizeof(buf), "target %d\xC2\xB0", target);
-                lv_label_set_text(ui_UnifiedScreen_targetLabel, buf);
+                snprintf(buf, sizeof(buf), "%d/%d\xC2\xB0", currentTemp, target);
+            } else {
+                snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
             }
-            // Update current temp
-            snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
             lv_label_set_text(ui_UnifiedScreen_tempLabel, buf);
             // Update the appropriate arc based on mode
             if (!lv_obj_has_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN)) {

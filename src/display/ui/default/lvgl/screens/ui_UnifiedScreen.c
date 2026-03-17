@@ -7,7 +7,6 @@ lv_obj_t *ui_UnifiedScreen_outerArc = NULL;
 lv_obj_t *ui_UnifiedScreen_innerArc = NULL;
 lv_obj_t *ui_UnifiedScreen_flushBtn = NULL;
 lv_obj_t *ui_UnifiedScreen_flushIcon = NULL;
-lv_obj_t *ui_UnifiedScreen_targetLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_tempLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_pressureLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_actionBtn = NULL;
@@ -67,34 +66,22 @@ void ui_UnifiedScreen_screen_init(void) {
     // --- Left tap zone (left 25% of screen) with arrow ---
     ui_UnifiedScreen_leftZone = lv_obj_create(ui_UnifiedScreen);
     lv_obj_remove_style_all(ui_UnifiedScreen_leftZone);
-    lv_obj_set_size(ui_UnifiedScreen_leftZone, 116, 300);
+    lv_obj_set_size(ui_UnifiedScreen_leftZone, 80, 300);
     lv_obj_align(ui_UnifiedScreen_leftZone, LV_ALIGN_LEFT_MID, 0, -30);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_leftZone, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_add_flag(ui_UnifiedScreen_leftZone, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(ui_UnifiedScreen_leftZone, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_event_cb(ui_UnifiedScreen_leftZone, ui_event_UnifiedScreen_left, LV_EVENT_CLICKED, NULL);
-    // Left arrow indicator
-    lv_obj_t *leftArrow = lv_label_create(ui_UnifiedScreen_leftZone);
-    lv_label_set_text(leftArrow, LV_SYMBOL_LEFT);
-    lv_obj_set_style_text_font(leftArrow, &lv_font_montserrat_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(leftArrow, UI_COLOR_MUTED, LV_PART_MAIN);
-    lv_obj_align(leftArrow, LV_ALIGN_LEFT_MID, 15, 0);
 
-    // --- Right tap zone (right 25% of screen) with arrow ---
+    // --- Right tap zone ---
     ui_UnifiedScreen_rightZone = lv_obj_create(ui_UnifiedScreen);
     lv_obj_remove_style_all(ui_UnifiedScreen_rightZone);
-    lv_obj_set_size(ui_UnifiedScreen_rightZone, 116, 300);
+    lv_obj_set_size(ui_UnifiedScreen_rightZone, 80, 300);
     lv_obj_align(ui_UnifiedScreen_rightZone, LV_ALIGN_RIGHT_MID, 0, -30);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_rightZone, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_add_flag(ui_UnifiedScreen_rightZone, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(ui_UnifiedScreen_rightZone, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_event_cb(ui_UnifiedScreen_rightZone, ui_event_UnifiedScreen_right, LV_EVENT_CLICKED, NULL);
-    // Right arrow indicator
-    lv_obj_t *rightArrow = lv_label_create(ui_UnifiedScreen_rightZone);
-    lv_label_set_text(rightArrow, LV_SYMBOL_RIGHT);
-    lv_obj_set_style_text_font(rightArrow, &lv_font_montserrat_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(rightArrow, UI_COLOR_MUTED, LV_PART_MAIN);
-    lv_obj_align(rightArrow, LV_ALIGN_RIGHT_MID, -15, 0);
 
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_UnifiedScreen);
@@ -111,8 +98,7 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_set_style_radius(ui_UnifiedScreen_flushBtn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_UnifiedScreen_flushBtn, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_flushBtn, UI_OPA(3), LV_PART_MAIN);
-    lv_obj_set_style_border_color(ui_UnifiedScreen_flushBtn, UI_COLOR_BTN_BORDER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(ui_UnifiedScreen_flushBtn, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_width(ui_UnifiedScreen_flushBtn, 0, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(ui_UnifiedScreen_flushBtn, 0, LV_PART_MAIN);
     ui_UnifiedScreen_flushIcon = lv_label_create(ui_UnifiedScreen_flushBtn);
     lv_label_set_text(ui_UnifiedScreen_flushIcon, LV_SYMBOL_TINT);
@@ -136,12 +122,6 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_set_style_text_color(ui_UnifiedScreen_timerLabel, UI_COLOR_GREEN, LV_PART_MAIN);
     lv_obj_set_style_text_letter_space(ui_UnifiedScreen_timerLabel, 1, LV_PART_MAIN);
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
-
-    // --- Target temperature label (small, above current temp) ---
-    ui_UnifiedScreen_targetLabel = lv_label_create(center_stack);
-    lv_label_set_text(ui_UnifiedScreen_targetLabel, "");
-    lv_obj_set_style_text_font(ui_UnifiedScreen_targetLabel, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_UnifiedScreen_targetLabel, UI_COLOR_TEXT_TER, LV_PART_MAIN);
 
     // --- Temperature label ---
     ui_UnifiedScreen_tempLabel = lv_label_create(center_stack);
@@ -212,20 +192,25 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_event_cb(ui_UnifiedScreen_completeBtn, ui_event_UnifiedScreen_complete, LV_EVENT_CLICKED, NULL);
 
-    // --- Standby button (in center stack, at bottom of flex) ---
-    ui_UnifiedScreen_standbyBtn = lv_btn_create(center_stack);
-    lv_obj_set_size(ui_UnifiedScreen_standbyBtn, 56, 56);
+    // --- Standby button (absolute positioned, last child for z-order) ---
+    ui_UnifiedScreen_standbyBtn = lv_btn_create(ui_UnifiedScreen);
+    lv_obj_set_size(ui_UnifiedScreen_standbyBtn, 48, 48);
+    lv_obj_align(ui_UnifiedScreen_standbyBtn, LV_ALIGN_BOTTOM_MID, 0, -25);
     lv_obj_set_style_radius(ui_UnifiedScreen_standbyBtn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(ui_UnifiedScreen_standbyBtn, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_SURFACE, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(ui_UnifiedScreen_standbyBtn, UI_OPA(30), LV_PART_MAIN);
     lv_obj_set_style_border_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_BTN_BORDER, LV_PART_MAIN);
     lv_obj_set_style_border_width(ui_UnifiedScreen_standbyBtn, 2, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(ui_UnifiedScreen_standbyBtn, 0, LV_PART_MAIN);
+    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_ext_click_area(ui_UnifiedScreen_standbyBtn, 15);
     lv_obj_t *powerIcon = lv_label_create(ui_UnifiedScreen_standbyBtn);
     lv_label_set_text(powerIcon, LV_SYMBOL_POWER);
-    lv_obj_set_style_text_font(powerIcon, &lv_font_montserrat_24, LV_PART_MAIN);
+    lv_obj_set_style_text_font(powerIcon, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_text_color(powerIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
     lv_obj_center(powerIcon);
     lv_obj_add_event_cb(ui_UnifiedScreen_standbyBtn, ui_event_UnifiedScreen_standby, LV_EVENT_CLICKED, NULL);
+    lv_obj_move_foreground(ui_UnifiedScreen_standbyBtn);
 
     // Start in idle brew mode
     ui_UnifiedScreen_set_idle();
@@ -258,7 +243,6 @@ void ui_UnifiedScreen_set_idle(void) {
 
     // Restore flush button idle style
     lv_obj_set_size(ui_UnifiedScreen_flushBtn, UI_FLUSH_BTN_SIZE, UI_FLUSH_BTN_SIZE);
-    lv_obj_set_style_border_color(ui_UnifiedScreen_flushBtn, UI_COLOR_BTN_BORDER, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_UnifiedScreen_flushBtn, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_flushBtn, UI_OPA(3), LV_PART_MAIN);
     lv_obj_set_style_shadow_width(ui_UnifiedScreen_flushBtn, 0, LV_PART_MAIN);
@@ -284,7 +268,6 @@ void ui_UnifiedScreen_set_flushing(void) {
 
     // Flush button active style
     lv_obj_set_size(ui_UnifiedScreen_flushBtn, UI_FLUSH_BTN_ACTIVE_SIZE, UI_FLUSH_BTN_ACTIVE_SIZE);
-    lv_obj_set_style_border_color(ui_UnifiedScreen_flushBtn, UI_COLOR_BLUE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_UnifiedScreen_flushBtn, UI_COLOR_BLUE, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_flushBtn, UI_OPA(15), LV_PART_MAIN);
     lv_obj_set_style_shadow_color(ui_UnifiedScreen_flushBtn, UI_COLOR_BLUE, LV_PART_MAIN);

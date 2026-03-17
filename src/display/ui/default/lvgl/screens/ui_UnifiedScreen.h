@@ -16,7 +16,6 @@ extern lv_obj_t *ui_UnifiedScreen_innerArc;
 // Center stack
 extern lv_obj_t *ui_UnifiedScreen_flushBtn;
 extern lv_obj_t *ui_UnifiedScreen_flushIcon;
-extern lv_obj_t *ui_UnifiedScreen_targetLabel;
 extern lv_obj_t *ui_UnifiedScreen_tempLabel;
 extern lv_obj_t *ui_UnifiedScreen_pressureLabel;
 extern lv_obj_t *ui_UnifiedScreen_actionBtn;
