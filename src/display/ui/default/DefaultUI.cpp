@@ -127,35 +127,26 @@ void DefaultUI::init() {
             changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
             break;
         case MODE_BREW:
-            if (currentScreen == ui_UnifiedScreen) {
-                ui_UnifiedScreen_set_mode_brew();
-            } else {
-                changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
-                ui_UnifiedScreen_set_mode_brew();
-            }
-            break;
         case MODE_GRIND:
-            if (currentScreen == ui_UnifiedScreen) {
+            if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_brew();
             } else {
+                // screen_init defaults to brew mode — set_mode_brew called after init in handleScreenChange
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
-                ui_UnifiedScreen_set_mode_brew();
             }
             break;
         case MODE_STEAM:
-            if (currentScreen == ui_UnifiedScreen) {
+            if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_steam();
             } else {
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
-                ui_UnifiedScreen_set_mode_steam();
             }
             break;
         case MODE_WATER:
-            if (currentScreen == ui_UnifiedScreen) {
+            if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_water();
             } else {
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
-                ui_UnifiedScreen_set_mode_water();
             }
             break;
         default:
@@ -168,7 +159,7 @@ void DefaultUI::init() {
         if (lv_scr_act() == ui_NewBrewScreen) {
             ui_NewBrewScreen_set_brewing();
         }
-        if (lv_scr_act() == ui_UnifiedScreen) {
+        if (lv_scr_act() == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
             ui_UnifiedScreen_set_brewing();
         }
     });
@@ -178,7 +169,7 @@ void DefaultUI::init() {
             if (lv_scr_act() == ui_NewBrewScreen) {
                 ui_NewBrewScreen_set_idle();
             }
-            if (lv_scr_act() == ui_UnifiedScreen) {
+            if (lv_scr_act() == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_idle();
             }
         }
@@ -800,11 +791,18 @@ void DefaultUI::setupReactive() {
         },
         &currentTemp);
 
-    // Unified screen temp update
+    // Unified screen temp + target update
     effect_mgr.use_effect(
         [=] { return currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL; },
         [=]() {
             char buf[16];
+            // Update target temp label
+            int target = controller->getTargetTemp();
+            if (target > 0) {
+                snprintf(buf, sizeof(buf), "target %d\xC2\xB0", target);
+                lv_label_set_text(ui_UnifiedScreen_targetLabel, buf);
+            }
+            // Update current temp
             snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
             lv_label_set_text(ui_UnifiedScreen_tempLabel, buf);
             // Update the appropriate arc based on mode
@@ -868,6 +866,22 @@ void DefaultUI::handleScreenChange() {
 
         _ui_screen_change(targetScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, targetScreenInit);
         lv_obj_del(current);
+
+        // After unified screen init, apply the correct mode
+        if (*targetScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
+            switch (mode) {
+            case MODE_WATER:
+                ui_UnifiedScreen_set_mode_water();
+                break;
+            case MODE_STEAM:
+                ui_UnifiedScreen_set_mode_steam();
+                break;
+            default:
+                ui_UnifiedScreen_set_mode_brew();
+                break;
+            }
+        }
+
         rerender = true;
     }
 }

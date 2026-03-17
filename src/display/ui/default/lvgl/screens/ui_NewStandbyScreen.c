@@ -12,6 +12,8 @@ void ui_NewStandbyScreen_screen_init(void) {
     lv_obj_clear_flag(ui_NewStandbyScreen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_NewStandbyScreen, UI_COLOR_STANDBY_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewStandbyScreen, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(ui_NewStandbyScreen, 0, LV_PART_MAIN);
+    lv_obj_set_style_outline_width(ui_NewStandbyScreen, 0, LV_PART_MAIN);
 
     // Container for centering icons
     lv_obj_t *icon_container = lv_obj_create(ui_NewStandbyScreen);

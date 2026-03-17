@@ -29,14 +29,6 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewBrewScreen, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewBrewScreen, LV_OPA_COVER, LV_PART_MAIN);
 
-    // --- Mode label above nav dots ---
-    ui_NewBrewScreen_modeLabel = lv_label_create(ui_NewBrewScreen);
-    lv_label_set_text(ui_NewBrewScreen_modeLabel, "BREW");
-    lv_obj_set_style_text_font(ui_NewBrewScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_NewBrewScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
-    lv_obj_set_style_text_letter_space(ui_NewBrewScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewBrewScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
-
     // --- Outer arc (pressure) ---
     ui_NewBrewScreen_pressureArc = lv_arc_create(ui_NewBrewScreen);
     lv_obj_set_size(ui_NewBrewScreen_pressureArc, UI_RING_OUTER_RADIUS * 2, UI_RING_OUTER_RADIUS * 2);
@@ -210,6 +202,14 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_style_radius(ui_NewBrewScreen_dot3, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewBrewScreen_dot3, UI_COLOR_MUTED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewBrewScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
+
+    // --- Mode label above nav dots (created last so it's on top) ---
+    ui_NewBrewScreen_modeLabel = lv_label_create(ui_NewBrewScreen);
+    lv_label_set_text(ui_NewBrewScreen_modeLabel, "BREW");
+    lv_obj_set_style_text_font(ui_NewBrewScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_NewBrewScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_letter_space(ui_NewBrewScreen_modeLabel, 2, LV_PART_MAIN);
+    lv_obj_align(ui_NewBrewScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 
     // Start in idle state
     ui_NewBrewScreen_set_idle();

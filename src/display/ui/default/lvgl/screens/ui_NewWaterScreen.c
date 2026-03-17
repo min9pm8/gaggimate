@@ -21,13 +21,6 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_set_style_bg_opa(ui_NewWaterScreen, LV_OPA_COVER, LV_PART_MAIN);
 
     // --- Mode label above nav dots ---
-    ui_NewWaterScreen_modeLabel = lv_label_create(ui_NewWaterScreen);
-    lv_label_set_text(ui_NewWaterScreen_modeLabel, "HOT WATER");
-    lv_obj_set_style_text_font(ui_NewWaterScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_NewWaterScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
-    lv_obj_set_style_text_letter_space(ui_NewWaterScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewWaterScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
-
     // --- Single arc (temperature) ---
     ui_NewWaterScreen_tempArc = lv_arc_create(ui_NewWaterScreen);
     lv_obj_set_size(ui_NewWaterScreen_tempArc, UI_RING_SINGLE_RADIUS * 2, UI_RING_SINGLE_RADIUS * 2);
@@ -119,4 +112,11 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewWaterScreen_dot3, UI_COLOR_MUTED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewWaterScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
 
+    // --- Mode label above nav dots (created last so it's on top) ---
+    ui_NewWaterScreen_modeLabel = lv_label_create(ui_NewWaterScreen);
+    lv_label_set_text(ui_NewWaterScreen_modeLabel, "HOT WATER");
+    lv_obj_set_style_text_font(ui_NewWaterScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_NewWaterScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_letter_space(ui_NewWaterScreen_modeLabel, 2, LV_PART_MAIN);
+    lv_obj_align(ui_NewWaterScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 }

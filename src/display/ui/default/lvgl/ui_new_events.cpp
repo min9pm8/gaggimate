@@ -7,9 +7,10 @@
 #include "screens/ui_UnifiedScreen.h"
 #include <display/core/constants.h>
 
-// --- Standby: tap anywhere → Brew ---
+// --- Standby: tap anywhere → Unified screen (brew mode) ---
 void ui_event_NewStandbyScreen(lv_event_t *e) {
-    controller.getUI()->changeScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init);
+    // Just set mode — DefaultUI's mode handler will changeScreen and call set_mode_brew
+    // after screen_init has run (in the next loop iteration via handleScreenChange)
     controller.setMode(MODE_BREW);
 }
 
@@ -125,6 +126,7 @@ void ui_event_UnifiedScreen_left(lv_event_t *e) {
         controller.setMode(MODE_WATER);
         ui_UnifiedScreen_set_mode_water();
     }
+    controller.getUI()->markDirty();
 }
 
 void ui_event_UnifiedScreen_right(lv_event_t *e) {
@@ -138,4 +140,5 @@ void ui_event_UnifiedScreen_right(lv_event_t *e) {
         controller.setMode(MODE_STEAM);
         ui_UnifiedScreen_set_mode_steam();
     }
+    controller.getUI()->markDirty();
 }

@@ -19,14 +19,6 @@ void ui_NewSteamScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewSteamScreen, UI_COLOR_BG, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewSteamScreen, LV_OPA_COVER, LV_PART_MAIN);
 
-    // --- Mode label above nav dots ---
-    ui_NewSteamScreen_modeLabel = lv_label_create(ui_NewSteamScreen);
-    lv_label_set_text(ui_NewSteamScreen_modeLabel, "STEAM");
-    lv_obj_set_style_text_font(ui_NewSteamScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_NewSteamScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
-    lv_obj_set_style_text_letter_space(ui_NewSteamScreen_modeLabel, 2, LV_PART_MAIN);
-    lv_obj_align(ui_NewSteamScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
-
     // --- Single arc (temperature) ---
     ui_NewSteamScreen_tempArc = lv_arc_create(ui_NewSteamScreen);
     lv_obj_set_size(ui_NewSteamScreen_tempArc, UI_RING_SINGLE_RADIUS * 2, UI_RING_SINGLE_RADIUS * 2);
@@ -101,4 +93,11 @@ void ui_NewSteamScreen_screen_init(void) {
     lv_obj_set_style_bg_color(ui_NewSteamScreen_dot3, UI_COLOR_RED, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewSteamScreen_dot3, LV_OPA_COVER, LV_PART_MAIN);
 
+    // --- Mode label above nav dots (created last so it's on top) ---
+    ui_NewSteamScreen_modeLabel = lv_label_create(ui_NewSteamScreen);
+    lv_label_set_text(ui_NewSteamScreen_modeLabel, "STEAM");
+    lv_obj_set_style_text_font(ui_NewSteamScreen_modeLabel, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_NewSteamScreen_modeLabel, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_letter_space(ui_NewSteamScreen_modeLabel, 2, LV_PART_MAIN);
+    lv_obj_align(ui_NewSteamScreen_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -30);
 }
