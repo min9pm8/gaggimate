@@ -36,10 +36,6 @@ extern lv_obj_t *ui_UnifiedScreen_completeBtn;
 // Standby button
 extern lv_obj_t *ui_UnifiedScreen_standbyBtn;
 
-// Mode navigation (left/right tap zones)
-extern lv_obj_t *ui_UnifiedScreen_leftZone;
-extern lv_obj_t *ui_UnifiedScreen_rightZone;
-
 void ui_UnifiedScreen_screen_init(void);
 
 // State management

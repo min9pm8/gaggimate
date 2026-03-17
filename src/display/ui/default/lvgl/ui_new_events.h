@@ -8,9 +8,6 @@ extern "C" {
 #endif
 
 void ui_event_NewStandbyScreen(lv_event_t *e);
-void ui_event_StandbyZone_water(lv_event_t *e);
-void ui_event_StandbyZone_brew(lv_event_t *e);
-void ui_event_StandbyZone_steam(lv_event_t *e);
 void ui_event_NewBrewScreen_gesture(lv_event_t *e);
 void ui_event_NewBrewScreen_flush(lv_event_t *e);
 void ui_event_NewBrewScreen_brew(lv_event_t *e);
@@ -26,8 +23,7 @@ void ui_event_UnifiedScreen_action(lv_event_t *e);
 void ui_event_UnifiedScreen_stop(lv_event_t *e);
 void ui_event_UnifiedScreen_complete(lv_event_t *e);
 void ui_event_UnifiedScreen_standby(lv_event_t *e);
-void ui_event_UnifiedScreen_left(lv_event_t *e);
-void ui_event_UnifiedScreen_right(lv_event_t *e);
+void ui_event_UnifiedScreen_gesture(lv_event_t *e);
 
 
 #ifdef __cplusplus

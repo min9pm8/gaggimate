@@ -18,9 +18,6 @@ lv_obj_t *ui_UnifiedScreen_timerLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_phaseLabel = NULL;
 lv_obj_t *ui_UnifiedScreen_completeBtn = NULL;
 lv_obj_t *ui_UnifiedScreen_standbyBtn = NULL;
-lv_obj_t *ui_UnifiedScreen_leftZone = NULL;
-lv_obj_t *ui_UnifiedScreen_rightZone = NULL;
-
 void ui_UnifiedScreen_screen_init(void) {
     ui_UnifiedScreen = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_UnifiedScreen, LV_OBJ_FLAG_SCROLLABLE);
@@ -63,25 +60,8 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_set_style_arc_width(ui_UnifiedScreen_innerArc, UI_RING_INNER_WIDTH, LV_PART_INDICATOR);
     lv_obj_set_style_arc_rounded(ui_UnifiedScreen_innerArc, true, LV_PART_INDICATOR);
 
-    // --- Left tap zone (left 25% of screen) with arrow ---
-    ui_UnifiedScreen_leftZone = lv_obj_create(ui_UnifiedScreen);
-    lv_obj_remove_style_all(ui_UnifiedScreen_leftZone);
-    lv_obj_set_size(ui_UnifiedScreen_leftZone, 80, 300);
-    lv_obj_align(ui_UnifiedScreen_leftZone, LV_ALIGN_LEFT_MID, 0, -30);
-    lv_obj_set_style_bg_opa(ui_UnifiedScreen_leftZone, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_add_flag(ui_UnifiedScreen_leftZone, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_clear_flag(ui_UnifiedScreen_leftZone, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(ui_UnifiedScreen_leftZone, ui_event_UnifiedScreen_left, LV_EVENT_CLICKED, NULL);
-
-    // --- Right tap zone ---
-    ui_UnifiedScreen_rightZone = lv_obj_create(ui_UnifiedScreen);
-    lv_obj_remove_style_all(ui_UnifiedScreen_rightZone);
-    lv_obj_set_size(ui_UnifiedScreen_rightZone, 80, 300);
-    lv_obj_align(ui_UnifiedScreen_rightZone, LV_ALIGN_RIGHT_MID, 0, -30);
-    lv_obj_set_style_bg_opa(ui_UnifiedScreen_rightZone, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_add_flag(ui_UnifiedScreen_rightZone, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_clear_flag(ui_UnifiedScreen_rightZone, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(ui_UnifiedScreen_rightZone, ui_event_UnifiedScreen_right, LV_EVENT_CLICKED, NULL);
+    // --- Gesture handler for swipe navigation ---
+    lv_obj_add_event_cb(ui_UnifiedScreen, ui_event_UnifiedScreen_gesture, LV_EVENT_GESTURE, NULL);
 
     // --- Center stack container ---
     lv_obj_t *center_stack = lv_obj_create(ui_UnifiedScreen);
