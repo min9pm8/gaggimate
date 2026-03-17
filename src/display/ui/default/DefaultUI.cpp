@@ -287,12 +287,14 @@ void DefaultUI::loop() {
         updateUnifiedScreen();
         updateNewStandbyScreen();
 
-        // Update clock on unified screen
+        // Update clock on unified screen (zero blocking)
         if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_clockLabel != NULL) {
-            time_t now = time(NULL);
-            if (now > 1000000000) { // NTP has synced (timestamp is reasonable)
-                struct tm timeinfo;
-                localtime_r(&now, &timeinfo);
+            time_t now;
+            time(&now);
+            struct tm timeinfo;
+            localtime_r(&now, &timeinfo);
+            // Only show if year is reasonable (NTP synced)
+            if (timeinfo.tm_year > 120) { // year > 2020
                 char timeStr[12];
                 Settings &settings = controller->getSettings();
                 const char *format = settings.isClock24hFormat() ? "%H:%M" : "%I:%M %p";
@@ -825,13 +827,35 @@ void DefaultUI::setupReactive() {
                 snprintf(buf, sizeof(buf), "%d\xC2\xB0", currentTemp);
             }
             lv_label_set_text(ui_UnifiedScreen_tempLabel, buf);
+
+            // Dynamically set arc range so 100% = target temp
+            // Add 5% headroom above target for overshoot display
+            int arcMax = target > 0 ? target + (target / 20) : 110;
+            if (arcMax < 10) arcMax = 110; // fallback
+
             // Update the appropriate arc based on mode
             if (!lv_obj_has_flag(ui_UnifiedScreen_innerArc, LV_OBJ_FLAG_HIDDEN)) {
                 // Brew mode: outer arc is temp (red/amber)
+                lv_arc_set_range(ui_UnifiedScreen_outerArc, 0, arcMax);
                 lv_arc_set_value(ui_UnifiedScreen_outerArc, currentTemp);
+                // Change color if over target
+                if (target > 0 && currentTemp > target) {
+                    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
+                } else {
+                    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
+                }
             } else {
                 // Water/Steam mode: outer arc is temp
+                lv_arc_set_range(ui_UnifiedScreen_outerArc, 0, arcMax);
                 lv_arc_set_value(ui_UnifiedScreen_outerArc, currentTemp);
+                // Change color if over target
+                if (mode == MODE_WATER) {
+                    if (target > 0 && currentTemp > target) {
+                        lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
+                    } else {
+                        lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_BLUE, LV_PART_INDICATOR);
+                    }
+                }
                 // Steam: change ring color when ready
                 if (mode == MODE_STEAM) {
                     int target = controller->getTargetTemp();
@@ -1110,6 +1134,7 @@ void DefaultUI::updateUnifiedScreen() {
     if (isBrewComplete && millis() - brewCompleteTime > UI_BREW_COMPLETE_DISMISS_MS) {
         isBrewComplete = false;
         isBrewing = false;
+        controller->clear(); // Finalize shot recording (fires brew:clear → saves shot history)
         ui_UnifiedScreen_set_idle();
     }
 }

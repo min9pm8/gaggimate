@@ -112,6 +112,7 @@ void ui_event_UnifiedScreen_stop(lv_event_t *e) {
 }
 
 void ui_event_UnifiedScreen_complete(lv_event_t *e) {
+    controller.clear(); // Finalize shot recording
     ui_UnifiedScreen_set_idle();
 }
 
