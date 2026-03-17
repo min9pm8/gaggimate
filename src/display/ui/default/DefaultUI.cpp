@@ -815,7 +815,7 @@ void DefaultUI::setupReactive() {
                 if (mode == MODE_STEAM) {
                     int target = controller->getTargetTemp();
                     bool ready = currentTemp >= target;
-                    lv_color_t ringColor = ready ? UI_COLOR_GREEN : UI_COLOR_RED;
+                    lv_color_t ringColor = ready ? UI_COLOR_GREEN : UI_COLOR_AMBER;
                     lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, ringColor, LV_PART_INDICATOR);
                 }
             }

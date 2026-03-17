@@ -103,7 +103,7 @@ void ui_UnifiedScreen_screen_init(void) {
     ui_UnifiedScreen_flushIcon = lv_label_create(ui_UnifiedScreen_flushBtn);
     lv_label_set_text(ui_UnifiedScreen_flushIcon, LV_SYMBOL_TINT);
     lv_obj_set_style_text_font(ui_UnifiedScreen_flushIcon, &lv_font_montserrat_48, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_UnifiedScreen_flushIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_flushIcon, UI_COLOR_BLUE, LV_PART_MAIN);
     lv_obj_center(ui_UnifiedScreen_flushIcon);
     lv_obj_add_event_cb(ui_UnifiedScreen_flushBtn, ui_event_UnifiedScreen_flush, LV_EVENT_CLICKED, NULL);
 
@@ -192,25 +192,13 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_event_cb(ui_UnifiedScreen_completeBtn, ui_event_UnifiedScreen_complete, LV_EVENT_CLICKED, NULL);
 
-    // --- Standby button (absolute positioned, last child for z-order) ---
+    // Standby button kept as hidden object for API compatibility
     ui_UnifiedScreen_standbyBtn = lv_btn_create(ui_UnifiedScreen);
-    lv_obj_set_size(ui_UnifiedScreen_standbyBtn, 48, 48);
-    lv_obj_align(ui_UnifiedScreen_standbyBtn, LV_ALIGN_BOTTOM_MID, 0, -35);
-    lv_obj_set_style_radius(ui_UnifiedScreen_standbyBtn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_SURFACE, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(ui_UnifiedScreen_standbyBtn, UI_OPA(30), LV_PART_MAIN);
-    lv_obj_set_style_border_color(ui_UnifiedScreen_standbyBtn, UI_COLOR_BTN_BORDER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(ui_UnifiedScreen_standbyBtn, 2, LV_PART_MAIN);
-    lv_obj_set_style_shadow_width(ui_UnifiedScreen_standbyBtn, 0, LV_PART_MAIN);
-    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_ext_click_area(ui_UnifiedScreen_standbyBtn, 20);
-    lv_obj_t *powerIcon = lv_label_create(ui_UnifiedScreen_standbyBtn);
-    lv_label_set_text(powerIcon, LV_SYMBOL_POWER);
-    lv_obj_set_style_text_font(powerIcon, &lv_font_montserrat_20, LV_PART_MAIN);
-    lv_obj_set_style_text_color(powerIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
-    lv_obj_center(powerIcon);
-    lv_obj_add_event_cb(ui_UnifiedScreen_standbyBtn, ui_event_UnifiedScreen_standby, LV_EVENT_CLICKED, NULL);
-    lv_obj_move_foreground(ui_UnifiedScreen_standbyBtn);
+    lv_obj_set_size(ui_UnifiedScreen_standbyBtn, 1, 1);
+    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
+
+    // --- Gesture handler: swipe up → standby ---
+    lv_obj_add_event_cb(ui_UnifiedScreen, ui_event_UnifiedScreen_gesture, LV_EVENT_GESTURE, NULL);
 
     // Start in idle brew mode
     ui_UnifiedScreen_set_idle();
@@ -247,7 +235,7 @@ void ui_UnifiedScreen_set_idle(void) {
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_flushBtn, UI_OPA(3), LV_PART_MAIN);
     lv_obj_set_style_shadow_width(ui_UnifiedScreen_flushBtn, 0, LV_PART_MAIN);
     lv_label_set_text(ui_UnifiedScreen_flushIcon, LV_SYMBOL_TINT);
-    lv_obj_set_style_text_color(ui_UnifiedScreen_flushIcon, UI_COLOR_TEXT_SEC, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_UnifiedScreen_flushIcon, UI_COLOR_BLUE, LV_PART_MAIN);
 
     // Restore timer color
     lv_obj_set_style_text_color(ui_UnifiedScreen_timerLabel, UI_COLOR_GREEN, LV_PART_MAIN);
@@ -291,7 +279,7 @@ void ui_UnifiedScreen_set_brewing(void) {
     lv_obj_clear_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_tempLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_pressureLabel, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
 
     lv_obj_add_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
@@ -353,6 +341,9 @@ void ui_UnifiedScreen_set_mode_brew(void) {
     lv_obj_clear_flag(ui_UnifiedScreen_pressureLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
 
+    // Reset action button top padding
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 0, LV_PART_MAIN);
+
     ui_UnifiedScreen_set_idle();
 }
 
@@ -378,12 +369,15 @@ void ui_UnifiedScreen_set_mode_water(void) {
     lv_obj_add_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
 
-    // Show standby, hide brew-specific
-    lv_obj_clear_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
+    // Hide brew-specific
+    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
+
+    // Add spacing above action button for water mode
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 20, LV_PART_MAIN);
 
     // Restore opacity
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_MAIN);
@@ -392,8 +386,8 @@ void ui_UnifiedScreen_set_mode_water(void) {
 }
 
 void ui_UnifiedScreen_set_mode_steam(void) {
-    // Outer arc = red (temp), turns green when ready
-    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
+    // Outer arc = amber (temp), turns green when ready
+    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_AMBER, LV_PART_INDICATOR);
     lv_arc_set_range(ui_UnifiedScreen_outerArc, UI_TEMP_STEAM_MIN, UI_TEMP_STEAM_MAX);
     lv_arc_set_value(ui_UnifiedScreen_outerArc, 0);
 
@@ -403,9 +397,9 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     // Action btn = non-clickable steam indicator
     lv_obj_clear_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_actionBtn, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_bg_color(ui_UnifiedScreen_actionBtn, UI_COLOR_RED, LV_PART_MAIN);
-    lv_obj_set_style_shadow_color(ui_UnifiedScreen_actionBtn, UI_COLOR_RED, LV_PART_MAIN);
-    lv_label_set_text(ui_UnifiedScreen_actionIcon, LV_SYMBOL_CHARGE);
+    lv_obj_set_style_bg_color(ui_UnifiedScreen_actionBtn, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_obj_set_style_shadow_color(ui_UnifiedScreen_actionBtn, UI_COLOR_AMBER, LV_PART_MAIN);
+    lv_label_set_text(ui_UnifiedScreen_actionIcon, LV_SYMBOL_UP);
     lv_obj_set_style_text_color(ui_UnifiedScreen_actionIcon, UI_COLOR_BG, LV_PART_MAIN);
 
     // Pressure hidden, flush hidden
@@ -413,12 +407,15 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     lv_obj_add_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_flushingLabel, LV_OBJ_FLAG_HIDDEN);
 
-    // Show standby, hide brew-specific
-    lv_obj_clear_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
+    // Hide brew-specific
+    lv_obj_add_flag(ui_UnifiedScreen_standbyBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_timerLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_phaseLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
+
+    // Reset action button top padding
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 0, LV_PART_MAIN);
 
     // Restore opacity
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_MAIN);

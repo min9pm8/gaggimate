@@ -25,6 +25,7 @@
 #define UI_COLOR_GREEN             lv_color_hex(0x00E676)
 #define UI_COLOR_BLUE              lv_color_hex(0x448AFF)
 #define UI_COLOR_RED               lv_color_hex(0xFF3B30)
+#define UI_COLOR_AMBER             lv_color_hex(0xFFAB40)
 
 // === Standby Icon States ===
 #define UI_COLOR_ICON_DISCONNECTED lv_color_hex(0xFF3B30)
