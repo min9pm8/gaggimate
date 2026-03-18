@@ -126,6 +126,7 @@ void DefaultUI::init() {
         case MODE_STANDBY:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_standby();
+                standbyEnterTime = millis(); // Start brightness dim timer
             } else {
                 changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
             }
@@ -134,6 +135,12 @@ void DefaultUI::init() {
         case MODE_GRIND:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_brew();
+                // Restore brightness when leaving standby
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
                 // screen_init defaults to brew mode — set_mode_brew called after init in handleScreenChange
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
@@ -142,6 +149,11 @@ void DefaultUI::init() {
         case MODE_STEAM:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_steam();
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
             }
@@ -149,6 +161,11 @@ void DefaultUI::init() {
         case MODE_WATER:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_water();
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
                 changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
             }
@@ -286,6 +303,14 @@ void DefaultUI::loop() {
         updateNewBrewScreen();
         updateUnifiedScreen();
         updateNewStandbyScreen();
+
+        // Brightness dimming for unified screen standby overlay
+        if (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY && standbyEnterTime > 0) {
+            const Settings &dimSettings = controller->getSettings();
+            if (millis() - standbyEnterTime >= dimSettings.getStandbyBrightnessTimeout()) {
+                setBrightness(dimSettings.getStandbyBrightness());
+            }
+        }
 
         // Update clock on unified screen (zero blocking)
         if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_clockLabel != NULL) {

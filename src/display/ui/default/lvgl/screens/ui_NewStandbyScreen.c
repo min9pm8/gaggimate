@@ -26,7 +26,7 @@ void ui_NewStandbyScreen_screen_init(void) {
     lv_obj_center(icon_row);
     lv_obj_set_flex_flow(icon_row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(icon_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(icon_row, 20, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(icon_row, 60, LV_PART_MAIN);
 
     ui_NewStandbyScreen_wifiIcon = lv_label_create(icon_row);
     lv_label_set_text(ui_NewStandbyScreen_wifiIcon, LV_SYMBOL_WIFI);

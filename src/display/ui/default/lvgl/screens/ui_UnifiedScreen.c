@@ -109,10 +109,11 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_label_set_text(ui_UnifiedScreen_tempLabel, "0\xC2\xB0");
     lv_obj_set_style_text_font(ui_UnifiedScreen_tempLabel, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_UnifiedScreen_tempLabel, UI_COLOR_TEXT_PRI, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_tempLabel, 25, LV_PART_MAIN);
 
     // --- Pressure label ---
     ui_UnifiedScreen_pressureLabel = lv_label_create(center_stack);
-    lv_label_set_text(ui_UnifiedScreen_pressureLabel, "0.0 bar");
+    lv_label_set_text(ui_UnifiedScreen_pressureLabel, "0.0");
     lv_obj_set_style_text_font(ui_UnifiedScreen_pressureLabel, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_UnifiedScreen_pressureLabel, UI_COLOR_GREEN, LV_PART_MAIN);
 
@@ -127,6 +128,7 @@ void ui_UnifiedScreen_screen_init(void) {
     // --- Action button (90px circle, green play) ---
     ui_UnifiedScreen_actionBtn = lv_btn_create(center_stack);
     lv_obj_set_size(ui_UnifiedScreen_actionBtn, UI_BREW_BTN_SIZE, UI_BREW_BTN_SIZE);
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 25, LV_PART_MAIN);
     lv_obj_set_style_radius(ui_UnifiedScreen_actionBtn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_UnifiedScreen_actionBtn, UI_COLOR_GREEN, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_UnifiedScreen_actionBtn, LV_OPA_COVER, LV_PART_MAIN);
@@ -211,7 +213,7 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_center(iconRow);
     lv_obj_set_flex_flow(iconRow, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(iconRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(iconRow, 30, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(iconRow, 60, LV_PART_MAIN);
 
     ui_UnifiedScreen_wifiLabel = lv_label_create(iconRow);
     lv_label_set_text(ui_UnifiedScreen_wifiLabel, LV_SYMBOL_WIFI);
@@ -380,8 +382,9 @@ void ui_UnifiedScreen_set_mode_brew(void) {
     lv_obj_clear_flag(ui_UnifiedScreen_pressureLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ui_UnifiedScreen_flushBtn, LV_OBJ_FLAG_HIDDEN);
 
-    // Reset action button top padding
+    // Reset padding from water/steam modes
     lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_tempLabel, 25, LV_PART_MAIN);
 
     ui_UnifiedScreen_set_idle();
 }
@@ -418,8 +421,9 @@ void ui_UnifiedScreen_set_mode_water(void) {
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
 
-    // Add spacing above action button for water mode
-    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 40, LV_PART_MAIN);
+    // Uniform spacing: temp gets top padding, action button gets top padding
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_tempLabel, 40, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 50, LV_PART_MAIN);
 
     // Restore opacity
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_MAIN);
@@ -460,8 +464,9 @@ void ui_UnifiedScreen_set_mode_steam(void) {
     lv_obj_add_flag(ui_UnifiedScreen_stopBtn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ui_UnifiedScreen_completeBtn, LV_OBJ_FLAG_HIDDEN);
 
-    // Add spacing above action button for steam mode
-    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 40, LV_PART_MAIN);
+    // Uniform spacing: temp gets top padding, action button gets top padding
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_tempLabel, 40, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(ui_UnifiedScreen_actionBtn, 50, LV_PART_MAIN);
 
     // Restore opacity
     lv_obj_set_style_opa(ui_UnifiedScreen_outerArc, LV_OPA_COVER, LV_PART_MAIN);
