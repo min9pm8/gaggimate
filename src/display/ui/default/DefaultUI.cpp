@@ -1150,14 +1150,8 @@ void DefaultUI::updateUnifiedScreen() {
     }
 
     if (brewProcess->isComplete() && !isBrewComplete) {
+        // Brew finished — immediately return to idle and save shot
         isBrewComplete = true;
-        brewCompleteTime = millis();
-        ui_UnifiedScreen_set_complete();
-    }
-
-    // Auto-dismiss complete after 5 seconds
-    if (isBrewComplete && millis() - brewCompleteTime > UI_BREW_COMPLETE_DISMISS_MS) {
-        isBrewComplete = false;
         isBrewing = false;
         controller->clear(); // Finalize shot recording (fires brew:clear → saves shot history)
         ui_UnifiedScreen_set_idle();

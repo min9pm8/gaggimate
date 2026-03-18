@@ -95,11 +95,19 @@ void ui_event_NewSteamScreen_gesture(lv_event_t *e) {
 // === Unified Screen Events ===
 
 void ui_event_UnifiedScreen_flush(lv_event_t *e) {
-    controller.onFlush();
+    // Toggle: if already flushing, stop and return to idle
+    if (controller.isActive()) {
+        controller.deactivate();
+        controller.clear();
+        ui_UnifiedScreen_set_idle();
+    } else {
+        controller.onFlush();
+    }
 }
 
 void ui_event_UnifiedScreen_action(lv_event_t *e) {
     if (currentUIMode == MODE_WATER) {
+        // Water pump toggle
         controller.isActive() ? controller.deactivate() : controller.activate();
     } else {
         controller.activate();
