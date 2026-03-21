@@ -26,7 +26,7 @@ void ui_NewWaterScreen_screen_init(void) {
     lv_obj_set_size(ui_NewWaterScreen_tempArc, UI_RING_SINGLE_RADIUS * 2, UI_RING_SINGLE_RADIUS * 2);
     lv_obj_center(ui_NewWaterScreen_tempArc);
     lv_arc_set_rotation(ui_NewWaterScreen_tempArc, UI_ARC_START_ANGLE);
-    lv_arc_set_bg_angles(ui_NewWaterScreen_tempArc, 0, 270);
+    lv_arc_set_bg_angles(ui_NewWaterScreen_tempArc, 0, UI_ARC_SWEEP_ANGLE);
     lv_arc_set_range(ui_NewWaterScreen_tempArc, UI_TEMP_WATER_MIN, UI_TEMP_WATER_MAX);
     lv_arc_set_value(ui_NewWaterScreen_tempArc, 0);
     lv_obj_remove_style(ui_NewWaterScreen_tempArc, NULL, LV_PART_KNOB);

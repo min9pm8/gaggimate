@@ -34,7 +34,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_size(ui_NewBrewScreen_pressureArc, UI_RING_OUTER_RADIUS * 2, UI_RING_OUTER_RADIUS * 2);
     lv_obj_center(ui_NewBrewScreen_pressureArc);
     lv_arc_set_rotation(ui_NewBrewScreen_pressureArc, UI_ARC_START_ANGLE);
-    lv_arc_set_bg_angles(ui_NewBrewScreen_pressureArc, 0, 270);
+    lv_arc_set_bg_angles(ui_NewBrewScreen_pressureArc, 0, UI_ARC_SWEEP_ANGLE);
     lv_arc_set_range(ui_NewBrewScreen_pressureArc, UI_PRESSURE_MIN * 10, UI_PRESSURE_MAX * 10);
     lv_arc_set_value(ui_NewBrewScreen_pressureArc, 0);
     lv_obj_remove_style(ui_NewBrewScreen_pressureArc, NULL, LV_PART_KNOB);
@@ -51,7 +51,7 @@ void ui_NewBrewScreen_screen_init(void) {
     lv_obj_set_size(ui_NewBrewScreen_tempArc, UI_RING_INNER_RADIUS * 2, UI_RING_INNER_RADIUS * 2);
     lv_obj_center(ui_NewBrewScreen_tempArc);
     lv_arc_set_rotation(ui_NewBrewScreen_tempArc, UI_ARC_START_ANGLE);
-    lv_arc_set_bg_angles(ui_NewBrewScreen_tempArc, 0, 270);
+    lv_arc_set_bg_angles(ui_NewBrewScreen_tempArc, 0, UI_ARC_SWEEP_ANGLE);
     lv_arc_set_range(ui_NewBrewScreen_tempArc, UI_TEMP_BREW_MIN, UI_TEMP_BREW_MAX);
     lv_arc_set_value(ui_NewBrewScreen_tempArc, 0);
     lv_obj_remove_style(ui_NewBrewScreen_tempArc, NULL, LV_PART_KNOB);

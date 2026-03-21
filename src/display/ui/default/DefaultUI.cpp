@@ -914,10 +914,8 @@ void DefaultUI::setupReactive() {
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_NewStandbyScreen_wifiIcon, wifiColor, LV_PART_MAIN);
             bool btConnected = !waitingForController;
-            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_SEC : UI_COLOR_ICON_DISCONNECTED;
+            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_NewStandbyScreen_btIcon, btColor, LV_PART_MAIN);
-            lv_obj_set_style_text_opa(ui_NewStandbyScreen_btIcon,
-                btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
         },
         &waitingForController);
 
@@ -929,10 +927,8 @@ void DefaultUI::setupReactive() {
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_UnifiedScreen_wifiLabel, wifiColor, LV_PART_MAIN);
             bool btConnected = !waitingForController;
-            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_SEC : UI_COLOR_ICON_DISCONNECTED;
+            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_UnifiedScreen_btLabel, btColor, LV_PART_MAIN);
-            lv_obj_set_style_text_opa(ui_UnifiedScreen_btLabel,
-                btConnected ? UI_STANDBY_ICON_SEC_OPA : LV_OPA_COVER, LV_PART_MAIN);
         },
         &waitingForController);
 }
@@ -1132,7 +1128,11 @@ void DefaultUI::updateStatusScreen() const {
 void DefaultUI::updateUnifiedScreen() {
     if (!isBrewing || currentScreen != ui_UnifiedScreen || ui_UnifiedScreen_timerLabel == NULL) return;
 
+    // Try current process first, fall back to last process (deactivate moves it there)
     Process *process = controller->getProcess();
+    if (process == nullptr) {
+        process = controller->getLastProcess();
+    }
     if (process == nullptr || process->getType() != MODE_BREW) {
         return;
     }
@@ -1150,10 +1150,10 @@ void DefaultUI::updateUnifiedScreen() {
     }
 
     if (brewProcess->isComplete() && !isBrewComplete) {
-        // Brew finished — immediately return to idle and save shot
+        // Brew/flush finished — return to idle and save shot
         isBrewComplete = true;
         isBrewing = false;
-        controller->clear(); // Finalize shot recording (fires brew:clear → saves shot history)
+        controller->clear();
         ui_UnifiedScreen_set_idle();
     }
 }
@@ -1161,7 +1161,20 @@ void DefaultUI::updateUnifiedScreen() {
 void DefaultUI::updateNewBrewScreen() {
     if (!isBrewing || currentScreen != ui_NewBrewScreen || ui_NewBrewScreen_timerLabel == NULL) return;
 
+    // Auto-dismiss complete after timeout (check first, process may already be cleared)
+    if (isBrewComplete && millis() - brewCompleteTime > UI_BREW_COMPLETE_DISMISS_MS) {
+        isBrewComplete = false;
+        isBrewing = false;
+        controller->clear();
+        ui_NewBrewScreen_set_idle();
+        return;
+    }
+
+    // Try current process first, fall back to last process (deactivate moves it there)
     Process *process = controller->getProcess();
+    if (process == nullptr) {
+        process = controller->getLastProcess();
+    }
     if (process == nullptr || process->getType() != MODE_BREW) {
         return;
     }
@@ -1182,13 +1195,6 @@ void DefaultUI::updateNewBrewScreen() {
         isBrewComplete = true;
         brewCompleteTime = millis();
         ui_NewBrewScreen_set_complete();
-    }
-
-    // Auto-dismiss complete after 5 seconds
-    if (isBrewComplete && millis() - brewCompleteTime > UI_BREW_COMPLETE_DISMISS_MS) {
-        isBrewComplete = false;
-        isBrewing = false;
-        ui_NewBrewScreen_set_idle();
     }
 }
 

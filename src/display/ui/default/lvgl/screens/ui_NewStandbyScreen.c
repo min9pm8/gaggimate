@@ -36,6 +36,5 @@ void ui_NewStandbyScreen_screen_init(void) {
     ui_NewStandbyScreen_btIcon = lv_label_create(icon_row);
     lv_label_set_text(ui_NewStandbyScreen_btIcon, LV_SYMBOL_BLUETOOTH);
     lv_obj_set_style_text_font(ui_NewStandbyScreen_btIcon, &lv_font_montserrat_48, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_NewStandbyScreen_btIcon, UI_COLOR_STANDBY_ICON_SEC, LV_PART_MAIN);
-    lv_obj_set_style_text_opa(ui_NewStandbyScreen_btIcon, UI_STANDBY_ICON_SEC_OPA, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_NewStandbyScreen_btIcon, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
 }

@@ -36,24 +36,24 @@
 
 #define UI_FLUSH_BTN_SIZE          72
 #define UI_FLUSH_BTN_ACTIVE_SIZE   84
-#define UI_BREW_BTN_SIZE           90
+#define UI_BREW_BTN_SIZE           72
 #define UI_STOP_BTN_SIZE           84
 #define UI_PUMP_BTN_SIZE           86
 
 #define UI_RING_OUTER_RADIUS       215
-#define UI_RING_OUTER_WIDTH        12
+#define UI_RING_OUTER_WIDTH        5
 #define UI_RING_INNER_RADIUS       190
-#define UI_RING_INNER_WIDTH        10
+#define UI_RING_INNER_WIDTH        5
 #define UI_RING_SINGLE_RADIUS      210
-#define UI_RING_SINGLE_WIDTH       12
+#define UI_RING_SINGLE_WIDTH       5
 
 #define UI_NAV_DOT_SIZE            5
 #define UI_NAV_DOT_GAP             5
 #define UI_NAV_DOT_BOTTOM          16
 
-// === Arc Range (270 degrees, gap at bottom) ===
-#define UI_ARC_START_ANGLE         135
-#define UI_ARC_END_ANGLE           45
+// === Arc Range (120 degrees, 10 o'clock to 2 o'clock) ===
+#define UI_ARC_START_ANGLE         210
+#define UI_ARC_SWEEP_ANGLE         120
 
 // === Gauge Ranges ===
 #define UI_PRESSURE_MIN            0
