@@ -453,12 +453,20 @@ void DefaultUI::onProfileSelect() {
 }
 
 void DefaultUI::setupPanel() {
+    // Apply color theme BEFORE ui_init() so screen_init calls use the correct palette
+    const Settings &settings = controller->getSettings();
+    int colorTheme = settings.getColorTheme();
+    if (colorTheme == 0) {
+        ui_set_active_theme(esp_random() % UI_COLOR_THEME_COUNT);
+    } else {
+        ui_set_active_theme(colorTheme - 1);
+    }
+    currentColorTheme = colorTheme;
+
     ui_init();
     lv_task_handler();
 
     delay(100);
-    // Set initial brightness based on settings
-    const Settings &settings = controller->getSettings();
     setBrightness(settings.getMainBrightness());
 }
 
