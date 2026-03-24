@@ -860,6 +860,26 @@ export function Settings() {
                 <option value={1}>Light Theme</option>
               </select>
             </div>
+            <div className='form-control'>
+              <label htmlFor='colorTheme' className='mb-2 block text-sm font-medium'>
+                Color Theme
+              </label>
+              <select
+                id='colorTheme'
+                name='colorTheme'
+                className='select select-bordered w-full'
+                value={formData.colorTheme}
+                onChange={onChange('colorTheme')}
+              >
+                <option value={0}>Auto (Random)</option>
+                <option value={1}>Default</option>
+                <option value={2}>Cyan Frost</option>
+                <option value={3}>Ember</option>
+                <option value={4}>Sakura</option>
+                <option value={5}>Mint</option>
+                <option value={6}>Neon</option>
+              </select>
+            </div>
           </Card>
 
           {/* Sunrise Settings */}
