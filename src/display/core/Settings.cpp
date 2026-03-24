@@ -94,6 +94,7 @@ Settings::Settings() {
     standbyBrightnessTimeout = preferences.getInt("standby_bt", 60000);
     wifiApTimeout = preferences.getInt("wifi_apt", DEFAULT_WIFI_AP_TIMEOUT_MS);
     themeMode = preferences.getInt("theme", 0);
+    colorTheme = preferences.getInt("clr_theme", 0);
 
     // Sunrise settings
     sunriseR = preferences.getInt("sr_r", 0);
@@ -376,6 +377,11 @@ void Settings::setThemeMode(int theme_mode) {
     save();
 }
 
+void Settings::setColorTheme(int color_theme) {
+    colorTheme = std::clamp(color_theme, 0, 6);
+    save();
+}
+
 void Settings::setHistoryIndex(int history_index) {
     historyIndex = history_index;
     save();
@@ -524,6 +530,7 @@ void Settings::doSave() {
     preferences.putInt("standby_bt", standbyBrightnessTimeout);
     preferences.putInt("wifi_apt", wifiApTimeout);
     preferences.putInt("theme", themeMode);
+    preferences.putInt("clr_theme", colorTheme);
 
     // Sunrise Settings
     preferences.putInt("sr_r", sunriseR);
