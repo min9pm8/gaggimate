@@ -21,11 +21,31 @@
 #define UI_COLOR_MUTED             lv_color_hex(0x333333)
 #define UI_COLOR_BTN_BORDER        lv_color_hex(0x666666)
 
-// === Accent Colors ===
-#define UI_COLOR_GREEN             lv_color_hex(0x00E676)
-#define UI_COLOR_BLUE              lv_color_hex(0x448AFF)
+// === Accent Colors (theme-resolved at runtime) ===
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    lv_color_t primary;   // green role
+    lv_color_t secondary; // blue role
+    lv_color_t warning;   // amber role
+} ColorThemePalette;
+
+#define UI_COLOR_THEME_COUNT 6
+
+const ColorThemePalette* ui_get_active_theme(void);
+void ui_set_active_theme(int index);  // 0-based index (0-5)
+
+#ifdef __cplusplus
+}
+#endif
+
+#define UI_COLOR_GREEN  (ui_get_active_theme()->primary)
+#define UI_COLOR_BLUE   (ui_get_active_theme()->secondary)
+#define UI_COLOR_AMBER  (ui_get_active_theme()->warning)
+
 #define UI_COLOR_RED               lv_color_hex(0xFF3B30)
-#define UI_COLOR_AMBER             lv_color_hex(0xFFAB40)
 
 // === Standby Icon States ===
 #define UI_COLOR_ICON_DISCONNECTED lv_color_hex(0xFF3B30)
