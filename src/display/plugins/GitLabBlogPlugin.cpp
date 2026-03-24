@@ -8,12 +8,7 @@
 #include <display/models/shot_log_format.h>
 
 namespace {
-constexpr float TEMP_SCALE = 10.0f;
-constexpr float PRESSURE_SCALE = 10.0f;
-constexpr float FLOW_SCALE = 100.0f;
 constexpr float WEIGHT_SCALE = 10.0f;
-constexpr float RESISTANCE_SCALE = 100.0f;
-constexpr size_t MAX_SAMPLES_FOR_BLOG = 600; // ~2.5 min at 250ms intervals
 
 String urlEncode(const String &str) {
     String encoded;
@@ -317,35 +312,6 @@ void GitLabBlogPlugin::publishCombinedPost() {
             content += "\n";
         }
 
-        // Chart data as fenced JSON code block
-        uint32_t samplesToRead = hdr.sampleCount;
-        if (samplesToRead > MAX_SAMPLES_FOR_BLOG)
-            samplesToRead = MAX_SAMPLES_FOR_BLOG;
-
-        content += "```json\n";
-        content += "[";
-
-        for (uint32_t i = 0; i < samplesToRead; i++) {
-            ShotLogSample sample{};
-            if (shotFile.read(reinterpret_cast<uint8_t *>(&sample), sizeof(sample)) != sizeof(sample))
-                break;
-
-            if (i > 0)
-                content += ",";
-            content += "\n{";
-            content += "\"t\":" + String((float)sample.t * SHOT_LOG_SAMPLE_INTERVAL_MS / 1000.0f, 2);
-            content += ",\"ct\":" + String((float)sample.ct / TEMP_SCALE, 1);
-            content += ",\"tt\":" + String((float)sample.tt / TEMP_SCALE, 1);
-            content += ",\"cp\":" + String((float)sample.cp / PRESSURE_SCALE, 1);
-            content += ",\"tp\":" + String((float)sample.tp / PRESSURE_SCALE, 1);
-            content += ",\"fl\":" + String((float)sample.fl / FLOW_SCALE, 2);
-            content += ",\"pf\":" + String((float)sample.pf / FLOW_SCALE, 2);
-            if (sample.v > 0)
-                content += ",\"v\":" + String((float)sample.v / WEIGHT_SCALE, 1);
-            content += "}";
-        }
-
-        content += "\n]\n```\n\n";
         shotFile.close();
 
         // Load notes if available
