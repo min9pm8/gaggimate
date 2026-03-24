@@ -36,7 +36,7 @@ Six preset palettes:
 
 ## Settings
 
-A single integer preference `colorTheme`:
+A single integer preference `colorTheme`, stored with key `"clr_theme"` in ESP32 Preferences namespace `"controller"`:
 
 | Value | Meaning |
 |-------|---------|
@@ -48,7 +48,7 @@ A single integer preference `colorTheme`:
 | 5 | Mint |
 | 6 | Neon |
 
-Stored in ESP32 Preferences namespace `"controller"` with key `"colorTheme"`.
+`setColorTheme()` must clamp values to 0–6 to prevent out-of-bounds palette access. Uses the existing deferred `save()` pattern (dirty flag + task) to avoid excessive flash writes.
 
 ## Architecture
 
@@ -64,7 +64,30 @@ struct ColorThemePalette {
 };
 ```
 
-A `constexpr` array of 6 palettes, indexed by theme ID (1-based, subtract 1 for array index). A global accessor function returns the active palette, so all UI code resolves colors at runtime instead of compile time.
+A `constexpr` array of 6 palettes (0-indexed internally). A global accessor function with C linkage returns the active palette, so all UI code — including the `.c` screen files — resolves colors at runtime:
+
+```cpp
+extern "C" const ColorThemePalette* ui_get_active_theme(void);
+```
+
+The existing `#define` macros become function-call macros:
+
+```cpp
+#define UI_COLOR_GREEN  (ui_get_active_theme()->primary)
+#define UI_COLOR_BLUE   (ui_get_active_theme()->secondary)
+#define UI_COLOR_AMBER  (ui_get_active_theme()->warning)
+```
+
+This means `.c` screen files (`ui_UnifiedScreen.c`, `ui_NewBrewScreen.c`, `ui_NewWaterScreen.c`) do NOT need source changes — their `lv_obj_set_style_*()` calls using these macros will resolve to the active palette at call time.
+
+### Accent color reapply strategy
+
+Colors are set in two places, requiring different reapply approaches:
+
+1. **Screen init files (`.c`)** — Colors baked in during `screen_init()` at boot. These become stale after a runtime theme change.
+2. **Render loop (`DefaultUI.cpp`)** — Colors set in `updateUnifiedScreen()`, `updateNewBrewScreen()`, etc. These auto-resolve on next loop iteration since the macros are now function calls.
+
+For runtime theme changes, use a **re-init approach**: after changing the active palette, re-invoke `screen_init()` for the currently active screen. This is the simplest approach and acceptable because theme changes are infrequent user actions, not per-frame operations. The LVGL objects are recreated with the correct colors.
 
 ### Boot sequence
 
@@ -73,15 +96,19 @@ In `DefaultUI::setup()` or `applyTheme()`:
 1. Read `colorTheme` from settings.
 2. If 0 (auto): pick a random index 1–6 using `esp_random() % 6 + 1`.
 3. Set the active palette to the selected theme.
-4. Apply colors to all LVGL objects that reference accent colors.
+4. Screen init proceeds normally — macros resolve to the active palette.
 
 ### Runtime theme switching
 
 When the web UI sends a new `colorTheme` value:
 
 1. `WebUIPlugin` receives the setting and calls `settings->setColorTheme(value)`.
-2. Fire an event `"settings:colorTheme:change"`.
-3. `DefaultUI` listens for that event, updates the active palette, and reapplies accent colors to all live LVGL objects.
+2. Settings fires the existing `"settings:changed"` event (consistent with other settings).
+3. `DefaultUI` handles `"settings:changed"`, compares current vs new `colorTheme`, and if changed: updates the active palette, re-inits the current screen.
+
+### Interaction with Dark/Light theme (`themeMode`)
+
+The `themeMode` (Dark/Light) and `colorTheme` are orthogonal. `themeMode` controls background polarity via `ui_theme_set()`. Color themes control accent colors via the palette accessor. Order matters: apply `ui_theme_set()` first (which may set default accent styles), then apply the color theme palette (which overrides accents). This ensures the color theme always wins for accent colors.
 
 ### Web UI
 
@@ -91,21 +118,22 @@ In `web/src/pages/Settings/index.jsx`, add a dropdown in the Display section:
 Color Theme: [Auto (Random) | Default | Cyan Frost | Ember | Sakura | Mint | Neon]
 ```
 
-The selected value is sent as `colorTheme` in the settings form POST to `/api/settings`.
+The selected value is sent as `colorTheme` in the settings form POST to `/api/settings`. The GET endpoint must also include `colorTheme` in its JSON response so the dropdown reflects the current setting on page load.
 
 ## Files to modify
 
 | File | Change |
 |------|--------|
-| `src/display/ui/default/lvgl/ui_new_colors.h` | Add `ColorThemePalette` struct, palette array, accessor function. Keep `#define` macros as aliases to the active palette for backward compat. |
-| `src/display/core/Settings.h` | Add `getColorTheme()` / `setColorTheme(int)` |
-| `src/display/core/Settings.cpp` | Persist `"colorTheme"` preference, default 0 |
-| `src/display/ui/default/DefaultUI.cpp` | Apply theme on boot (random or fixed), listen for runtime changes, reapply accent colors |
-| `src/display/plugins/WebUIPlugin.cpp` | Handle `colorTheme` param in settings API, emit change event |
+| `src/display/ui/default/lvgl/ui_new_colors.h` | Add `ColorThemePalette` struct, palette array, C-linkage accessor. Redefine `UI_COLOR_GREEN`/`UI_COLOR_BLUE`/`UI_COLOR_AMBER` as function-call macros. |
+| `src/display/core/Settings.h` | Add `getColorTheme()` / `setColorTheme(int)` with clamping |
+| `src/display/core/Settings.cpp` | Persist `"clr_theme"` preference, default 0 |
+| `src/display/ui/default/DefaultUI.cpp` | Apply theme on boot (random or fixed), handle `"settings:changed"` for runtime reapply, re-init active screen on theme change |
+| `src/display/plugins/WebUIPlugin.cpp` | Handle `colorTheme` param in settings POST, include in settings GET response |
 | `web/src/pages/Settings/index.jsx` | Add color theme dropdown |
 
 ## Constraints
 
 - No heap allocation for palette storage — use `constexpr` arrays.
-- Keep the existing Dark/Light theme toggle (`themeMode`) independent — it controls background polarity, this controls accent colors. They are orthogonal.
+- Keep the existing Dark/Light theme toggle (`themeMode`) independent — it controls background polarity, this controls accent colors.
 - Red (`UI_COLOR_RED`) must never be overridden by a theme.
+- Input validation: clamp `colorTheme` to 0–6.
