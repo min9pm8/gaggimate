@@ -225,8 +225,11 @@ void GitLabBlogPlugin::publishCombinedPost() {
     }
     firstFile.close();
 
-    // Format timestamp from first shot
+    // Format timestamp from first shot — fall back to current time if NTP wasn't synced
     time_t ts = firstHdr.startEpoch;
+    if (ts < 1600000000) { // Before 2020-09-13 = NTP wasn't synced when shot was recorded
+        ts = time(nullptr);
+    }
     struct tm *tmInfo = localtime(&ts);
     char dateBuf[32];
     strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%dT%H:%M:%S", tmInfo);
