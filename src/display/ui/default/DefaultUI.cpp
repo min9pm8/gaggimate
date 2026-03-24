@@ -1,6 +1,7 @@
 #include "DefaultUI.h"
 
 #include <WiFi.h>
+#include <esp_random.h>
 #include <display/config.h>
 #include <display/core/Controller.h>
 #include <display/core/process/BrewProcess.h>
@@ -399,6 +400,19 @@ void DefaultUI::changeScreen(lv_obj_t **screen, void (*target_init)()) {
 
     // Reset some submenus
     brewScreenState = BrewScreenState::Brew;
+}
+
+void DefaultUI::forceReinitScreen(lv_obj_t **screen, void (*target_init)(void)) {
+    // Force screen re-creation by nulling the pointer.
+    // handleScreenChange/changeScreen skip re-init when the target is already active.
+    // _ui_screen_change only calls target_init() when *target == NULL.
+    // So we must: delete the old LVGL object, null the pointer, then trigger changeScreen.
+    lv_obj_t *old = *screen;
+    *screen = NULL;
+    changeScreen(screen, target_init);
+    // handleScreenChange will see current != *targetScreen (NULL) and call
+    // _ui_screen_change which calls target_init() since *target == NULL,
+    // then deletes the old screen object.
 }
 
 void DefaultUI::changeBrewScreenMode(BrewScreenState state) {
@@ -1252,6 +1266,34 @@ void DefaultUI::applyTheme() {
 
         if (AmoledDisplayDriver::getInstance() == panelDriver && currentThemeMode == UI_THEME_DEFAULT) {
             enable_amoled_black_theme_override(lv_disp_get_default());
+        }
+    }
+
+    // Color theme (accent palette)
+    int newColorTheme = settings.getColorTheme();
+    if (newColorTheme != currentColorTheme) {
+        if (newColorTheme == 0) {
+            // Auto-rotate: pick random theme
+            ui_set_active_theme(esp_random() % UI_COLOR_THEME_COUNT);
+        } else {
+            // Manual: settings value 1-6 maps to palette index 0-5
+            ui_set_active_theme(newColorTheme - 1);
+        }
+        currentColorTheme = newColorTheme;
+
+        // Re-init current screen to reapply accent colors baked during screen_init.
+        // Skip on first boot (currentScreen not yet set — screen_init will use new palette).
+        if (currentScreen != nullptr) {
+            if (currentScreen == ui_UnifiedScreen)
+                forceReinitScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
+            else if (currentScreen == ui_NewBrewScreen)
+                forceReinitScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init);
+            else if (currentScreen == ui_NewWaterScreen)
+                forceReinitScreen(&ui_NewWaterScreen, &ui_NewWaterScreen_screen_init);
+            else if (currentScreen == ui_NewSteamScreen)
+                forceReinitScreen(&ui_NewSteamScreen, &ui_NewSteamScreen_screen_init);
+            else if (currentScreen == ui_NewStandbyScreen)
+                forceReinitScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
         }
     }
 }

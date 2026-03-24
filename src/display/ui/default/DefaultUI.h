@@ -32,6 +32,7 @@ class DefaultUI {
 
     // Interface methods
     void changeScreen(lv_obj_t **screen, void (*target_init)(void));
+    void forceReinitScreen(lv_obj_t **screen, void (*target_init)(void));
 
     void changeBrewScreenMode(BrewScreenState state);
     void onProfileSwitch();
@@ -121,6 +122,7 @@ class DefaultUI {
     Profile currentProfileChoice{};
     std::vector<String> favoritedProfiles;
     int currentThemeMode = -1; // Force applyTheme on first loop
+    int currentColorTheme = -1; // Force apply on first loop
 
     // New screen state
     bool isFlushing = false;
