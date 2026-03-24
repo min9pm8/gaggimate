@@ -554,6 +554,8 @@ void WebUIPlugin::handleSettings(AsyncWebServerRequest *request) const {
                 settings->setSteamPumpCutoff(request->arg("steamPumpCutoff").toFloat());
             if (request->hasArg("themeMode"))
                 settings->setThemeMode(request->arg("themeMode").toInt());
+            if (request->hasArg("colorTheme"))
+                settings->setColorTheme(request->arg("colorTheme").toInt());
             if (request->hasArg("sunriseR"))
                 settings->setSunriseR(request->arg("sunriseR").toInt());
             if (request->hasArg("sunriseG"))
@@ -659,6 +661,7 @@ void WebUIPlugin::handleSettings(AsyncWebServerRequest *request) const {
     doc["steamPumpPercentage"] = settings.getSteamPumpPercentage();
     doc["steamPumpCutoff"] = settings.getSteamPumpCutoff();
     doc["themeMode"] = settings.getThemeMode();
+    doc["colorTheme"] = settings.getColorTheme();
     doc["sunriseR"] = settings.getSunriseR();
     doc["sunriseG"] = settings.getSunriseG();
     doc["sunriseB"] = settings.getSunriseB();
