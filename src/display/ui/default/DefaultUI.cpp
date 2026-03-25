@@ -304,6 +304,7 @@ void DefaultUI::loop() {
         updateNewBrewScreen();
         updateUnifiedScreen();
         updateNewStandbyScreen();
+        updateNewProfileScreen();
 
         // Brightness dimming for unified screen standby overlay
         if (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY && standbyEnterTime > 0) {
@@ -1250,6 +1251,40 @@ void DefaultUI::updateNewStandbyScreen() {
     }
 }
 
+void DefaultUI::updateNewProfileScreen() {
+    static bool populated = false;
+    if (ui_NewProfileScreen_name1 == NULL) return;
+    if (currentScreen != ui_NewProfileScreen) { populated = false; return; }
+    if (populated) return;
+    populated = true;
+
+    std::vector<String> profiles = profileManager->listProfiles();
+
+    if (profiles.size() >= 1) {
+        Profile p1;
+        if (profileManager->loadProfile(profiles[0], p1)) {
+            lv_label_set_text(ui_NewProfileScreen_name1, p1.label.c_str());
+            char detail[32];
+            snprintf(detail, sizeof(detail), "%.0fs", p1.getTotalDuration() / 1000.0f);
+            lv_label_set_text(ui_NewProfileScreen_detail1, detail);
+        }
+    }
+
+    if (profiles.size() >= 2) {
+        Profile p2;
+        if (profileManager->loadProfile(profiles[1], p2)) {
+            lv_label_set_text(ui_NewProfileScreen_name2, p2.label.c_str());
+            char detail[32];
+            snprintf(detail, sizeof(detail), "%.0fs", p2.getTotalDuration() / 1000.0f);
+            lv_label_set_text(ui_NewProfileScreen_detail2, detail);
+        }
+    }
+
+    if (profiles.size() < 2 && ui_NewProfileScreen_card2 != NULL) {
+        lv_obj_add_flag(ui_NewProfileScreen_card2, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
 void DefaultUI::adjustDials(lv_obj_t *dials) {
     lv_obj_t *tempGauge = ui_comp_get_child(dials, UI_COMP_DIALS_TEMPGAUGE);
     lv_obj_t *tempText = ui_comp_get_child(dials, UI_COMP_DIALS_TEMPTEXT);
@@ -1313,6 +1348,8 @@ void DefaultUI::applyTheme() {
                 forceReinitScreen(&ui_NewSteamScreen, &ui_NewSteamScreen_screen_init);
             else if (currentScreen == ui_NewStandbyScreen)
                 forceReinitScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
+            else if (currentScreen == ui_NewProfileScreen)
+                forceReinitScreen(&ui_NewProfileScreen, &ui_NewProfileScreen_screen_init);
         }
     }
 }

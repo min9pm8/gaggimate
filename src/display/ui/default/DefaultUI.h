@@ -136,6 +136,7 @@ class DefaultUI {
     void updateNewWaterScreen();
     void updateNewSteamScreen();
     void updateNewStandbyScreen();
+    void updateNewProfileScreen();
 
     // Screen change
     lv_obj_t **targetScreen = &ui_InitScreen;
