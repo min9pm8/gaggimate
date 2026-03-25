@@ -739,6 +739,24 @@ void Controller::onFlush() {
     pluginManager->trigger("controller:brew:start");
 }
 
+void Controller::showProfileScreen() {
+#ifndef GAGGIMATE_HEADLESS
+    if (ui) {
+        ui->changeScreen(&ui_NewProfileScreen, &ui_NewProfileScreen_screen_init);
+        ui->markDirty();
+    }
+#endif
+}
+
+void Controller::selectProfileByIndex(int index) {
+    if (profileManager) {
+        std::vector<String> profiles = profileManager->listProfiles();
+        if (index >= 0 && index < (int)profiles.size()) {
+            profileManager->selectProfile(profiles[index]);
+        }
+    }
+}
+
 void Controller::handleBrewButton(int brewButtonStatus) {
     printf("current screen %d, brew button %d\n", getMode(), brewButtonStatus);
     if (brewButtonStatus) {

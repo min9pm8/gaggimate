@@ -89,6 +89,8 @@ class Controller {
     void setVolumetricOverride(bool override) { volumetricOverride = override; }
     bool isBluetoothScaleHealthy() const;
     void onFlush();
+    void showProfileScreen();
+    void selectProfileByIndex(int index);
     int getWaterLevel() const {
         float reversedLevel = static_cast<float>(settings.getEmptyTankDistance()) -
                               static_cast<float>(std::min(settings.getEmptyTankDistance(), tofDistance));
