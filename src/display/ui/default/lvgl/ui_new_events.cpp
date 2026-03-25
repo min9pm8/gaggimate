@@ -5,6 +5,7 @@
 #include "screens/ui_NewWaterScreen.h"
 #include "screens/ui_NewSteamScreen.h"
 #include "screens/ui_UnifiedScreen.h"
+#include "screens/ui_NewProfileScreen.h"
 #include <display/core/constants.h>
 
 static int currentUIMode = MODE_BREW;
@@ -15,10 +16,42 @@ static void deferred_go_brew(void *data) {
     controller.setMode(MODE_BREW);
 }
 
-// --- Standby: tap anywhere → Unified screen (brew mode) ---
+static bool profileSelectedThisSession = false;
+
+// --- Standby: tap anywhere → profile selection (first time) or brew (after) ---
 void ui_event_NewStandbyScreen(lv_event_t *e) {
+    if (!profileSelectedThisSession) {
+        controller.showProfileScreen();
+        return;
+    }
     currentUIMode = MODE_BREW;
     lv_async_call(deferred_go_brew, NULL);
+}
+
+// --- Profile screen: card selection ---
+static void deferred_select_profile(void *data) {
+    int cardIndex = (int)(intptr_t)data;
+    controller.selectProfileByIndex(cardIndex);
+    profileSelectedThisSession = true;
+    controller.setMode(MODE_BREW);
+}
+
+void ui_event_NewProfileScreen_card1(lv_event_t *e) {
+    lv_async_call(deferred_select_profile, (void *)(intptr_t)0);
+}
+
+void ui_event_NewProfileScreen_card2(lv_event_t *e) {
+    lv_async_call(deferred_select_profile, (void *)(intptr_t)1);
+}
+
+void ui_event_NewProfileScreen_gesture(lv_event_t *e) {
+    lv_indev_t *indev = lv_indev_get_act();
+    if (indev == NULL) return;
+    lv_dir_t dir = lv_indev_get_gesture_dir(indev);
+    lv_indev_wait_release(indev);
+    if (dir == LV_DIR_BOTTOM) {
+        controller.activateStandby();
+    }
 }
 
 // --- Brew: swipe navigation ---
