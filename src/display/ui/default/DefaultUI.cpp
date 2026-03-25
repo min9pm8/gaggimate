@@ -813,10 +813,21 @@ void DefaultUI::setupReactive() {
     effect_mgr.use_effect(
         [=] { return currentScreen == ui_NewBrewScreen && pressureAvailable && ui_NewBrewScreen_pressureLabel != NULL; },
         [=]() {
+            float targetPressure = controller->getTargetPressure();
             char buf[16];
-            snprintf(buf, sizeof(buf), "%.1f bar", pressure);
+            if (targetPressure > 0.0f) {
+                snprintf(buf, sizeof(buf), "%.1f/%.1f", pressure, targetPressure);
+            } else {
+                snprintf(buf, sizeof(buf), "%.1f bar", pressure);
+            }
             lv_label_set_text(ui_NewBrewScreen_pressureLabel, buf);
             lv_arc_set_value(ui_NewBrewScreen_pressureArc, (int)(pressure * 10));
+            // Change color if over target, like temp arc behavior
+            if (targetPressure > 0.0f && pressure > targetPressure) {
+                lv_obj_set_style_arc_color(ui_NewBrewScreen_pressureArc, UI_COLOR_RED, LV_PART_INDICATOR);
+            } else {
+                lv_obj_set_style_arc_color(ui_NewBrewScreen_pressureArc, UI_COLOR_GREEN, LV_PART_INDICATOR);
+            }
         },
         &pressure);
 
@@ -889,7 +900,7 @@ void DefaultUI::setupReactive() {
                 if (target > 0 && currentTemp > target) {
                     lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
                 } else {
-                    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_RED, LV_PART_INDICATOR);
+                    lv_obj_set_style_arc_color(ui_UnifiedScreen_outerArc, UI_COLOR_AMBER, LV_PART_INDICATOR);
                 }
             } else {
                 // Water/Steam mode: outer arc is temp

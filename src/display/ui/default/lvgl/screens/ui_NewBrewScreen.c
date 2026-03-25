@@ -113,7 +113,7 @@ void ui_NewBrewScreen_screen_init(void) {
     // --- Pressure label ---
     ui_NewBrewScreen_pressureLabel = lv_label_create(center_stack);
     lv_label_set_text(ui_NewBrewScreen_pressureLabel, "0.0 bar");
-    lv_obj_set_style_text_font(ui_NewBrewScreen_pressureLabel, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_NewBrewScreen_pressureLabel, &lv_font_montserrat_34, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_NewBrewScreen_pressureLabel, UI_COLOR_GREEN, LV_PART_MAIN);
 
     // --- Brew button (circle, 52px, green) ---
