@@ -1253,33 +1253,13 @@ void DefaultUI::updateNewStandbyScreen() {
 
 void DefaultUI::updateNewProfileScreen() {
     static bool populated = false;
-    if (ui_NewProfileScreen_name1 == NULL) return;
+    if (ui_NewProfileScreen_card1 == NULL) return;
     if (currentScreen != ui_NewProfileScreen) { populated = false; return; }
     if (populated) return;
     populated = true;
 
+    // Icons are hardcoded in screen_init — just hide card2 if only one profile
     std::vector<String> profiles = profileManager->listProfiles();
-
-    if (profiles.size() >= 1) {
-        Profile p1;
-        if (profileManager->loadProfile(profiles[0], p1)) {
-            lv_label_set_text(ui_NewProfileScreen_name1, p1.label.c_str());
-            char detail[32];
-            snprintf(detail, sizeof(detail), "%.0fs", p1.getTotalDuration() / 1000.0f);
-            lv_label_set_text(ui_NewProfileScreen_detail1, detail);
-        }
-    }
-
-    if (profiles.size() >= 2) {
-        Profile p2;
-        if (profileManager->loadProfile(profiles[1], p2)) {
-            lv_label_set_text(ui_NewProfileScreen_name2, p2.label.c_str());
-            char detail[32];
-            snprintf(detail, sizeof(detail), "%.0fs", p2.getTotalDuration() / 1000.0f);
-            lv_label_set_text(ui_NewProfileScreen_detail2, detail);
-        }
-    }
-
     if (profiles.size() < 2 && ui_NewProfileScreen_card2 != NULL) {
         lv_obj_add_flag(ui_NewProfileScreen_card2, LV_OBJ_FLAG_HIDDEN);
     }
