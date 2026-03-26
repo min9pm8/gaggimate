@@ -23,18 +23,18 @@ void ui_NewProfileScreen_screen_init(void) {
     lv_obj_add_flag(ui_NewProfileScreen, LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_add_event_cb(ui_NewProfileScreen, ui_event_NewProfileScreen_gesture, LV_EVENT_GESTURE, NULL);
 
-    // --- Centered column (matches brew screen center_stack pattern) ---
+    // --- Centered column (matches brew screen center_stack: 200x260, pad_row 5) ---
     lv_obj_t *col = lv_obj_create(ui_NewProfileScreen);
     lv_obj_remove_style_all(col);
-    lv_obj_set_size(col, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_size(col, 200, 260);
     lv_obj_center(col);
     lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(col, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(col, 24, LV_PART_MAIN);
+    lv_obj_set_style_pad_row(col, 5, LV_PART_MAIN);
 
     // --- Profile 1: UP arrow circle (green/primary) ---
     ui_NewProfileScreen_card1 = lv_btn_create(col);
-    lv_obj_set_size(ui_NewProfileScreen_card1, UI_BREW_BTN_SIZE, UI_BREW_BTN_SIZE);
+    lv_obj_set_size(ui_NewProfileScreen_card1, UI_STOP_BTN_SIZE, UI_STOP_BTN_SIZE);
     lv_obj_set_style_radius(ui_NewProfileScreen_card1, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewProfileScreen_card1, UI_COLOR_GREEN, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewProfileScreen_card1, LV_OPA_COVER, LV_PART_MAIN);
@@ -52,7 +52,7 @@ void ui_NewProfileScreen_screen_init(void) {
 
     // --- Profile 2: DOWN arrow circle (blue/secondary) ---
     ui_NewProfileScreen_card2 = lv_btn_create(col);
-    lv_obj_set_size(ui_NewProfileScreen_card2, UI_BREW_BTN_SIZE, UI_BREW_BTN_SIZE);
+    lv_obj_set_size(ui_NewProfileScreen_card2, UI_STOP_BTN_SIZE, UI_STOP_BTN_SIZE);
     lv_obj_set_style_radius(ui_NewProfileScreen_card2, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewProfileScreen_card2, UI_COLOR_BLUE, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewProfileScreen_card2, LV_OPA_COVER, LV_PART_MAIN);
