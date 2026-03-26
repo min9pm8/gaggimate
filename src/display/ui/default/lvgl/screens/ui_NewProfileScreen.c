@@ -34,7 +34,7 @@ void ui_NewProfileScreen_screen_init(void) {
 
     // --- Profile 1: UP arrow circle (green/primary) ---
     ui_NewProfileScreen_card1 = lv_btn_create(col);
-    lv_obj_set_size(ui_NewProfileScreen_card1, UI_STOP_BTN_SIZE, UI_STOP_BTN_SIZE);
+    lv_obj_set_size(ui_NewProfileScreen_card1, 100, 100);
     lv_obj_set_style_radius(ui_NewProfileScreen_card1, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewProfileScreen_card1, UI_COLOR_GREEN, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewProfileScreen_card1, LV_OPA_COVER, LV_PART_MAIN);
@@ -52,7 +52,7 @@ void ui_NewProfileScreen_screen_init(void) {
 
     // --- Profile 2: DOWN arrow circle (blue/secondary) ---
     ui_NewProfileScreen_card2 = lv_btn_create(col);
-    lv_obj_set_size(ui_NewProfileScreen_card2, UI_STOP_BTN_SIZE, UI_STOP_BTN_SIZE);
+    lv_obj_set_size(ui_NewProfileScreen_card2, 100, 100);
     lv_obj_set_style_radius(ui_NewProfileScreen_card2, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_NewProfileScreen_card2, UI_COLOR_BLUE, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(ui_NewProfileScreen_card2, LV_OPA_COVER, LV_PART_MAIN);
