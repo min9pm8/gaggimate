@@ -139,37 +139,39 @@ void DefaultUI::init() {
         case MODE_GRIND:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_brew();
+                // Restore brightness when leaving standby
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
-                changeScreen(&ui_NewBrewScreen, &ui_NewBrewScreen_screen_init);
-            }
-            if (standbyEnterTime > 0) {
-                const Settings &s = controller->getSettings();
-                setBrightness(s.getMainBrightness());
-                standbyEnterTime = 0;
+                // screen_init defaults to brew mode — set_mode_brew called after init in handleScreenChange
+                changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
             }
             break;
         case MODE_STEAM:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_steam();
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
-                changeScreen(&ui_NewSteamScreen, &ui_NewSteamScreen_screen_init);
-            }
-            if (standbyEnterTime > 0) {
-                const Settings &s = controller->getSettings();
-                setBrightness(s.getMainBrightness());
-                standbyEnterTime = 0;
+                changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
             }
             break;
         case MODE_WATER:
             if (currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
                 ui_UnifiedScreen_set_mode_water();
+                if (standbyEnterTime > 0) {
+                    const Settings &s = controller->getSettings();
+                    setBrightness(s.getMainBrightness());
+                    standbyEnterTime = 0;
+                }
             } else {
-                changeScreen(&ui_NewWaterScreen, &ui_NewWaterScreen_screen_init);
-            }
-            if (standbyEnterTime > 0) {
-                const Settings &s = controller->getSettings();
-                setBrightness(s.getMainBrightness());
-                standbyEnterTime = 0;
+                changeScreen(&ui_UnifiedScreen, &ui_UnifiedScreen_screen_init);
             }
             break;
         default:
