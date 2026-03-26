@@ -58,7 +58,7 @@ void ui_set_active_theme(int index);  // 0-based index (0-5)
 #define UI_FLUSH_BTN_ACTIVE_SIZE   84
 #define UI_BREW_BTN_SIZE           72
 #define UI_STOP_BTN_SIZE           84
-#define UI_PUMP_BTN_SIZE           86
+#define UI_PUMP_BTN_SIZE           100
 
 #define UI_RING_OUTER_RADIUS       215
 #define UI_RING_OUTER_WIDTH        5

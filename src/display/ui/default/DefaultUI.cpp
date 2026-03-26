@@ -346,7 +346,7 @@ void DefaultUI::loop() {
 
     // Error overlay management
     static lv_obj_t *errorOverlay = NULL;
-    if (error && currentScreen != ui_InitScreen) {
+    if (error && currentScreen != ui_StandbyScreen) {
         if (errorOverlay == NULL || lv_obj_get_parent(errorOverlay) != lv_scr_act()) {
             // Clean up old overlay if screen changed
             if (errorOverlay != NULL) {
@@ -385,7 +385,7 @@ void DefaultUI::loop() {
     bool alreadyStandby = (currentScreen == ui_NewStandbyScreen) ||
         (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY);
     if (!alreadyStandby &&
-        currentScreen != ui_InitScreen &&
+        currentScreen != ui_StandbyScreen &&
         !active && !waitingForController) {
         const Settings &autoStandbySettings = controller->getSettings();
         if (autoStandbySettings.getStandbyTimeout() > 0 &&
@@ -832,10 +832,6 @@ void DefaultUI::setupReactive() {
                                                    profileDirty ? _ui_theme_alpha_NiceWhite : _ui_theme_alpha_SemiDark);
         },
         &brewScreenState, &profileDirty);
-    effect_mgr.use_effect([=] { return currentScreen == ui_StandbyScreen; },
-                          [=]() { lv_img_set_src(ui_StandbyScreen_logo, christmasMode ? &ui_img_1510335 : &ui_img_logo_png); },
-                          &christmasMode);
-
     // === New screen reactive effects ===
 
     // Brew screen temp update

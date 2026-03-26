@@ -708,7 +708,7 @@ void WebUIPlugin::handleBLEScaleList(AsyncWebServerRequest *request) {
         JsonDocument scale;
         scale["uuid"] = device.getAddress().toString();
         scale["name"] = device.getName();
-        scale["rssi"] = device.getRSSI();
+        scale["rssi"] = 0; // RSSI not available in current library version
         scalesArray.add(scale);
     }
     AsyncResponseStream *response = request->beginResponseStream("application/json");
