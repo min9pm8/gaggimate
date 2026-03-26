@@ -32,7 +32,7 @@ lv_obj_t *ui_dials_create(lv_obj_t *comp_parent) {
 
     lv_obj_set_style_arc_width(cui_tempGauge, 35, LV_PART_INDICATOR | LV_STATE_DEFAULT);
     lv_obj_set_style_arc_rounded(cui_tempGauge, false, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    lv_obj_set_style_arc_img_src(cui_tempGauge, &ui_img_489054950, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_arc_color(cui_tempGauge, lv_color_hex(0xD10000), LV_PART_INDICATOR | LV_STATE_DEFAULT);
 
     lv_obj_set_style_bg_color(cui_tempGauge, lv_color_hex(0xD10000), LV_PART_KNOB | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(cui_tempGauge, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
