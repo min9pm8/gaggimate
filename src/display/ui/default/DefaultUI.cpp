@@ -317,11 +317,12 @@ void DefaultUI::loop() {
         updateNewStandbyScreen();
         updateNewProfileScreen();
 
-        // Brightness dimming for unified screen standby overlay
-        if (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY && standbyEnterTime > 0) {
+        // Brightness dimming for unified screen standby overlay (set once)
+        if (currentScreen == ui_UnifiedScreen && mode == MODE_STANDBY && standbyEnterTime > 1) {
             const Settings &dimSettings = controller->getSettings();
             if (millis() - standbyEnterTime >= dimSettings.getStandbyBrightnessTimeout()) {
                 setBrightness(dimSettings.getStandbyBrightness());
+                standbyEnterTime = 1; // Mark as dimmed, prevent repeated calls
             }
         }
 
@@ -648,23 +649,24 @@ void DefaultUI::setupReactive() {
                           &updateAvailable);
     effect_mgr.use_effect([=] { return currentScreen == ui_StandbyScreen; },
                           [=]() {
-                              bool deactivated = true;
+                              bool showLabel = false;
                               if (updateActive) {
                                   lv_label_set_text_fmt(ui_StandbyScreen_mainLabel, "Updating...");
-                              } else if (error) {
-                                  if (controller->getError() == ERROR_CODE_RUNAWAY) {
-                                      lv_label_set_text_fmt(ui_StandbyScreen_mainLabel, "Temperature error, please restart");
-                                  }
+                                  showLabel = true;
+                              } else if (error && controller->getError() == ERROR_CODE_RUNAWAY) {
+                                  lv_label_set_text_fmt(ui_StandbyScreen_mainLabel, "Temperature error, please restart");
+                                  showLabel = true;
                               } else if (autotuning) {
                                   lv_label_set_text_fmt(ui_StandbyScreen_mainLabel, "Autotuning...");
-                              } else if (waitingForController) {
-                                  lv_label_set_text_fmt(ui_StandbyScreen_mainLabel, "Waiting for controller...");
-                              } else {
-                                  deactivated = !initialized;
+                                  showLabel = true;
                               }
-                              _ui_flag_modify(ui_StandbyScreen_mainLabel, LV_OBJ_FLAG_HIDDEN, deactivated);
-                              _ui_flag_modify(ui_StandbyScreen_touchIcon, LV_OBJ_FLAG_HIDDEN, !deactivated);
-                              _ui_flag_modify(ui_StandbyScreen_statusContainer, LV_OBJ_FLAG_HIDDEN, !deactivated);
+                              _ui_flag_modify(ui_StandbyScreen_mainLabel, LV_OBJ_FLAG_HIDDEN, !showLabel);
+                              _ui_flag_modify(ui_StandbyScreen_touchIcon, LV_OBJ_FLAG_HIDDEN, _UI_MODIFY_FLAG_ADD);
+                              _ui_flag_modify(ui_StandbyScreen_statusContainer, LV_OBJ_FLAG_HIDDEN, _UI_MODIFY_FLAG_ADD);
+                              // Hide dot animation once status text is shown
+                              if (ui_StandbyScreen_logo != NULL && showLabel) {
+                                  lv_obj_add_flag(ui_StandbyScreen_logo, LV_OBJ_FLAG_HIDDEN);
+                              }
                           },
                           &updateAvailable, &error, &autotuning, &waitingForController, &initialized);
     effect_mgr.use_effect([=] { return currentScreen == ui_BrewScreen; },
@@ -975,29 +977,23 @@ void DefaultUI::setupReactive() {
         },
         &pressure);
 
-    // Standby WiFi/BT icon states
+    // Standby WiFi icon state
     effect_mgr.use_effect(
         [=] { return currentScreen == ui_NewStandbyScreen && ui_NewStandbyScreen_wifiIcon != NULL; },
         [=]() {
             bool wifiConnected = WiFi.status() == WL_CONNECTED;
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_NewStandbyScreen_wifiIcon, wifiColor, LV_PART_MAIN);
-            bool btConnected = !waitingForController;
-            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
-            lv_obj_set_style_text_color(ui_NewStandbyScreen_btIcon, btColor, LV_PART_MAIN);
         },
         &waitingForController);
 
-    // Unified screen standby WiFi/BT icon states
+    // Unified screen standby WiFi icon state
     effect_mgr.use_effect(
         [=] { return currentScreen == ui_UnifiedScreen && ui_UnifiedScreen_wifiLabel != NULL; },
         [=]() {
             bool wifiConnected = WiFi.status() == WL_CONNECTED;
             lv_color_t wifiColor = (wifiConnected || apActive) ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
             lv_obj_set_style_text_color(ui_UnifiedScreen_wifiLabel, wifiColor, LV_PART_MAIN);
-            bool btConnected = !waitingForController;
-            lv_color_t btColor = btConnected ? UI_COLOR_STANDBY_ICON_PRI : UI_COLOR_ICON_DISCONNECTED;
-            lv_obj_set_style_text_color(ui_UnifiedScreen_btLabel, btColor, LV_PART_MAIN);
         },
         &waitingForController);
 }
@@ -1039,11 +1035,12 @@ void DefaultUI::handleScreenChange() {
 }
 
 void DefaultUI::updateStandbyScreen() {
-    if (standbyEnterTime > 0) {
+    if (standbyEnterTime > 1) {
         const Settings &settings = controller->getSettings();
         const unsigned long now = millis();
         if (now - standbyEnterTime >= settings.getStandbyBrightnessTimeout()) {
             setBrightness(settings.getStandbyBrightness());
+            standbyEnterTime = 1;
         }
     }
 
@@ -1067,10 +1064,8 @@ void DefaultUI::updateStandbyScreen() {
     } else {
         lv_obj_add_flag(ui_StandbyScreen_time, LV_OBJ_FLAG_HIDDEN);
     }
-    controller->getClientController()->isConnected() ? lv_obj_clear_flag(ui_StandbyScreen_bluetoothIcon, LV_OBJ_FLAG_HIDDEN)
-                                                     : lv_obj_add_flag(ui_StandbyScreen_bluetoothIcon, LV_OBJ_FLAG_HIDDEN);
-    !apActive &&WiFi.status() == WL_CONNECTED ? lv_obj_clear_flag(ui_StandbyScreen_wifiIcon, LV_OBJ_FLAG_HIDDEN)
-                                              : lv_obj_add_flag(ui_StandbyScreen_wifiIcon, LV_OBJ_FLAG_HIDDEN);
+    // WiFi icon hidden on boot screen — only dot animation shown
+    lv_obj_add_flag(ui_StandbyScreen_wifiIcon, LV_OBJ_FLAG_HIDDEN);
 }
 
 void DefaultUI::updateStatusScreen() const {
@@ -1283,12 +1278,13 @@ void DefaultUI::updateNewSteamScreen() {
 }
 
 void DefaultUI::updateNewStandbyScreen() {
-    // Handle standby brightness dimming for new standby screen
-    if (currentScreen == ui_NewStandbyScreen && standbyEnterTime > 0) {
+    // Handle standby brightness dimming for new standby screen (set once)
+    if (currentScreen == ui_NewStandbyScreen && standbyEnterTime > 1) {
         const Settings &settings = controller->getSettings();
         const unsigned long now = millis();
         if (now - standbyEnterTime >= settings.getStandbyBrightnessTimeout()) {
             setBrightness(settings.getStandbyBrightness());
+            standbyEnterTime = 1;
         }
     }
 }

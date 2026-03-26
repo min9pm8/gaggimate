@@ -20,7 +20,6 @@ void ui_NewProfileScreen_screen_init(void) {
     lv_obj_set_style_outline_width(ui_NewProfileScreen, 0, LV_PART_MAIN);
 
     // Swipe down → go back to standby
-    lv_obj_add_flag(ui_NewProfileScreen, LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_add_event_cb(ui_NewProfileScreen, ui_event_NewProfileScreen_gesture, LV_EVENT_GESTURE, NULL);
 
     // --- Centered column (matches brew screen center_stack: 200x260, pad_row 5) ---

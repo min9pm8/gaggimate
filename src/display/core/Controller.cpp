@@ -75,7 +75,7 @@ void Controller::setup() {
     }
     pluginManager->registerPlugin(new WebUIPlugin());
     pluginManager->registerPlugin(&ShotHistory);
-    pluginManager->registerPlugin(&BLEScales);
+    // pluginManager->registerPlugin(&BLEScales); // disabled — no BLE scale, scanning kills WiFi
     pluginManager->registerPlugin(new LedControlPlugin());
     pluginManager->registerPlugin(new AutoWakeupPlugin());
     pluginManager->setup(this);

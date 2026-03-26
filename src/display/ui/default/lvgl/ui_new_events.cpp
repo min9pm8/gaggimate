@@ -29,19 +29,22 @@ void ui_event_NewStandbyScreen(lv_event_t *e) {
 }
 
 // --- Profile screen: card selection ---
-static void deferred_select_profile(void *data) {
-    int cardIndex = (int)(intptr_t)data;
+static void deferred_select_profile_timer(lv_timer_t *timer) {
+    lv_timer_del(timer);
+    int cardIndex = (int)(intptr_t)timer->user_data;
+    std::vector<String> profiles = controller.getProfileManager()->listProfiles();
+    if (cardIndex >= (int)profiles.size()) return;
     controller.selectProfileByIndex(cardIndex);
     profileSelectedThisSession = true;
     controller.setMode(MODE_BREW);
 }
 
 void ui_event_NewProfileScreen_card1(lv_event_t *e) {
-    lv_async_call(deferred_select_profile, (void *)(intptr_t)0);
+    lv_timer_create(deferred_select_profile_timer, 50, (void *)(intptr_t)0);
 }
 
 void ui_event_NewProfileScreen_card2(lv_event_t *e) {
-    lv_async_call(deferred_select_profile, (void *)(intptr_t)1);
+    lv_timer_create(deferred_select_profile_timer, 50, (void *)(intptr_t)1);
 }
 
 void ui_event_NewProfileScreen_gesture(lv_event_t *e) {

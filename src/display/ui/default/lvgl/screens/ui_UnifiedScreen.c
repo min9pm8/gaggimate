@@ -206,24 +206,12 @@ void ui_UnifiedScreen_screen_init(void) {
     lv_obj_clear_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(ui_UnifiedScreen_standbyContainer, LV_OBJ_FLAG_HIDDEN);
 
-    // WiFi/BT icons centered in standby container
-    lv_obj_t *iconRow = lv_obj_create(ui_UnifiedScreen_standbyContainer);
-    lv_obj_remove_style_all(iconRow);
-    lv_obj_set_size(iconRow, 200, 60);
-    lv_obj_center(iconRow);
-    lv_obj_set_flex_flow(iconRow, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(iconRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(iconRow, 60, LV_PART_MAIN);
-
-    ui_UnifiedScreen_wifiLabel = lv_label_create(iconRow);
+    // Centered WiFi icon in standby container
+    ui_UnifiedScreen_wifiLabel = lv_label_create(ui_UnifiedScreen_standbyContainer);
     lv_label_set_text(ui_UnifiedScreen_wifiLabel, LV_SYMBOL_WIFI);
     lv_obj_set_style_text_font(ui_UnifiedScreen_wifiLabel, &lv_font_montserrat_48, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_UnifiedScreen_wifiLabel, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
-
-    ui_UnifiedScreen_btLabel = lv_label_create(iconRow);
-    lv_label_set_text(ui_UnifiedScreen_btLabel, LV_SYMBOL_BLUETOOTH);
-    lv_obj_set_style_text_font(ui_UnifiedScreen_btLabel, &lv_font_montserrat_48, LV_PART_MAIN);
-    lv_obj_set_style_text_color(ui_UnifiedScreen_btLabel, UI_COLOR_STANDBY_ICON_PRI, LV_PART_MAIN);
+    lv_obj_center(ui_UnifiedScreen_wifiLabel);
 
     // Tap anywhere on standby → exit to brew
     lv_obj_add_event_cb(ui_UnifiedScreen_standbyContainer, ui_event_UnifiedScreen_tap_standby_exit, LV_EVENT_CLICKED, NULL);
