@@ -339,12 +339,18 @@ void Controller::loop() {
             if (lastProcess->getType() == MODE_BREW) {
                 if (auto *brewProcess = static_cast<BrewProcess *>(lastProcess);
                     brewProcess->target == ProcessTarget::VOLUMETRIC) {
-                    settings.setBrewDelay(brewProcess->getNewDelayTime());
+                    double newDelay = brewProcess->getNewDelayTime();
+                    if (newDelay >= 0) {
+                        settings.setBrewDelay(newDelay);
+                    }
                 }
             } else if (lastProcess->getType() == MODE_GRIND) {
                 if (auto *grindProcess = static_cast<GrindProcess *>(lastProcess);
                     grindProcess->target == ProcessTarget::VOLUMETRIC) {
-                    settings.setGrindDelay(grindProcess->getNewDelayTime());
+                    double newDelay = grindProcess->getNewDelayTime();
+                    if (newDelay >= 0) {
+                        settings.setGrindDelay(newDelay);
+                    }
                 }
             }
         }
@@ -476,7 +482,7 @@ void Controller::lowerTemp() {
 }
 
 void Controller::raiseBrewTarget() {
-    if (settings.isVolumetricTarget() && isVolumetricAvailable()) {
+    if (isVolumetricAvailable() && profileManager->getSelectedProfile().isVolumetric()) {
         profileManager->getSelectedProfile().adjustVolumetricTarget(1);
     } else {
         profileManager->getSelectedProfile().adjustDuration(1);
@@ -485,7 +491,7 @@ void Controller::raiseBrewTarget() {
 }
 
 void Controller::lowerBrewTarget() {
-    if (settings.isVolumetricTarget() && isVolumetricAvailable()) {
+    if (isVolumetricAvailable() && profileManager->getSelectedProfile().isVolumetric()) {
         profileManager->getSelectedProfile().adjustVolumetricTarget(-1);
     } else {
         profileManager->getSelectedProfile().adjustDuration(-1);
@@ -587,8 +593,9 @@ void Controller::activate() {
     switch (mode) {
     case MODE_BREW:
         startProcess(new BrewProcess(profileManager->getSelectedProfile(),
-                                     settings.isVolumetricTarget() && isVolumetricAvailable() ? ProcessTarget::VOLUMETRIC
-                                                                                              : ProcessTarget::TIME,
+                                     profileManager->getSelectedProfile().isVolumetric() && isVolumetricAvailable()
+                                         ? ProcessTarget::VOLUMETRIC
+                                         : ProcessTarget::TIME,
                                      settings.getBrewDelay()));
         break;
     case MODE_STEAM:
@@ -700,8 +707,8 @@ void Controller::onProfileSaveAsNew() {
     profile.label = "Copy of " + profileManager->getSelectedProfile().label;
     profile.id = generateShortID();
     settings.setSelectedProfile(profile.id);
-    settings.addFavoritedProfile(profile.id);
     profileManager->saveProfile(profileManager->getSelectedProfile());
+    profileManager->addFavoritedProfile(profile.id);
 }
 
 void Controller::onVolumetricMeasurement(double measurement, VolumetricMeasurementSource source) {
@@ -720,7 +727,7 @@ void Controller::onVolumetricMeasurement(double measurement, VolumetricMeasureme
     if (currentProcess != nullptr) {
         currentProcess->updateVolume(measurement);
     }
-    if (lastProcess != nullptr) {
+    if (lastProcess != nullptr && !lastProcess->isComplete()) {
         lastProcess->updateVolume(measurement);
     }
 }
@@ -754,6 +761,12 @@ void Controller::selectProfileByIndex(int index) {
         if (index >= 0 && index < (int)profiles.size()) {
             profileManager->selectProfile(profiles[index]);
         }
+    }
+}
+
+void Controller::onVolumetricDelete() {
+    if (profileManager->getSelectedProfile().isVolumetric()) {
+        profileManager->getSelectedProfile().removeVolumetricTarget();
     }
 }
 

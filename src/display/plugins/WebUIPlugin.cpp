@@ -118,13 +118,14 @@ void WebUIPlugin::loop() {
         doc["cd"] = controller->getSystemInfo().capabilities.dimming;
         doc["tw"] = profileManager->getSelectedProfile().getTotalVolume(); // total target weight for the process
         doc["bta"] = controller->isVolumetricAvailable() ? 1 : 0;
-        doc["bt"] = controller->isVolumetricAvailable() && controller->getSettings().isVolumetricTarget() ? 1 : 0;
+        doc["bt"] = controller->isVolumetricAvailable() && controller->getProfileManager()->getSelectedProfile().isVolumetric() ? 1 : 0;
         doc["btd"] = profileManager->getSelectedProfile().getTotalDuration();
         doc["led"] = controller->getSystemInfo().capabilities.ledControl;
         doc["gtd"] = controller->getTargetGrindDuration();
         doc["gtv"] = controller->getSettings().getTargetGrindVolume();
         doc["gt"] = controller->isVolumetricAvailable() && controller->getSettings().isVolumetricTarget() ? 1 : 0;
         doc["gact"] = controller->isGrindActive() ? 1 : 0;
+        doc["rssi"] = controller->getClientController()->getClient()->getRssi();
 
         bool bleConnected = BLEScales.isConnected();
         // Add Bluetooth scale weight information
@@ -451,10 +452,10 @@ void WebUIPlugin::handleProfileRequest(uint32_t clientId, JsonDocument &request)
         profileManager->selectProfile(id);
     } else if (type == "req:profiles:favorite") {
         auto id = request["id"].as<String>();
-        controller->getSettings().addFavoritedProfile(id);
+        profileManager->addFavoritedProfile(id);
     } else if (type == "req:profiles:unfavorite") {
         auto id = request["id"].as<String>();
-        controller->getSettings().removeFavoritedProfile(id);
+        profileManager->removeFavoritedProfile(id);
     } else if (type == "req:profiles:reorder") {
         // Expect an array of profile IDs in desired order
         if (request["order"].is<JsonArray>()) {
@@ -707,6 +708,7 @@ void WebUIPlugin::handleBLEScaleList(AsyncWebServerRequest *request) {
         JsonDocument scale;
         scale["uuid"] = device.getAddress().toString();
         scale["name"] = device.getName();
+        scale["rssi"] = device.getRSSI();
         scalesArray.add(scale);
     }
     AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -745,6 +747,7 @@ void WebUIPlugin::handleBLEScaleInfo(AsyncWebServerRequest *request) {
     doc["connected"] = BLEScales.isConnected();
     doc["name"] = BLEScales.getName();
     doc["uuid"] = BLEScales.getUUID();
+    doc["rssi"] = BLEScales.getRSSI();
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     serializeJson(doc, *response);
     request->send(response);
