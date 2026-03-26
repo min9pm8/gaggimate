@@ -30,7 +30,7 @@ void ui_NewProfileScreen_screen_init(void) {
     lv_obj_center(col);
     lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(col, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(col, 5, LV_PART_MAIN);
+    lv_obj_set_style_pad_row(col, 34, LV_PART_MAIN);
 
     // --- Profile 1: UP arrow circle (green/primary) ---
     ui_NewProfileScreen_card1 = lv_btn_create(col);
