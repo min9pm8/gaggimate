@@ -75,6 +75,9 @@ class NimBLEClientController : public NimBLEAdvertisedDeviceCallbacks, NimBLECli
     void_callback_t disconnectCallback = nullptr;
 
     String _lastOutputControl = "";
+    char advancedOutputBuffer[80]{};
+    char outputBuffer[64]{};
+    char autotuneBuffer[24]{};
 
     // BLEAdvertisedDeviceCallbacks override
     void onResult(NimBLEAdvertisedDevice *advertisedDevice) override;
