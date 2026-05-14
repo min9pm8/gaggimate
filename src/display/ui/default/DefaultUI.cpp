@@ -1019,6 +1019,16 @@ void DefaultUI::handleScreenChange() {
         _ui_screen_change(targetScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, targetScreenInit);
         lv_obj_del(current);
 
+        // Null the global pointer for the deleted screen so _ui_screen_change
+        // will call screen_init (not use a stale object) on the next visit.
+        if (current == ui_UnifiedScreen) ui_UnifiedScreen = NULL;
+        else if (current == ui_NewProfileScreen) ui_NewProfileScreen = NULL;
+        else if (current == ui_NewStandbyScreen) ui_NewStandbyScreen = NULL;
+        else if (current == ui_StandbyScreen) ui_StandbyScreen = NULL;
+        else if (current == ui_NewBrewScreen) ui_NewBrewScreen = NULL;
+        else if (current == ui_NewSteamScreen) ui_NewSteamScreen = NULL;
+        else if (current == ui_NewWaterScreen) ui_NewWaterScreen = NULL;
+
         // After unified screen init, apply the correct mode
         if (*targetScreen == ui_UnifiedScreen && ui_UnifiedScreen_tempLabel != NULL) {
             switch (mode) {

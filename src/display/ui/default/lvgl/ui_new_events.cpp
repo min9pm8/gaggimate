@@ -36,6 +36,7 @@ static void deferred_select_profile_timer(lv_timer_t *timer) {
     if (cardIndex >= (int)profiles.size()) return;
     controller.selectProfileByIndex(cardIndex);
     profileSelectedThisSession = true;
+    currentUIMode = MODE_BREW;
     controller.setMode(MODE_BREW);
 }
 
@@ -200,11 +201,10 @@ void ui_event_UnifiedScreen_tap_right(lv_event_t *e) {
     }
 }
 
-// Tap anywhere on standby overlay → exit to brew mode
+// Tap anywhere on standby overlay → go to NewStandbyScreen (profile selection will be triggered there)
 void ui_event_UnifiedScreen_tap_standby_exit(lv_event_t *e) {
-    currentUIMode = MODE_BREW;
-    controller.setMode(MODE_BREW);
-    ui_UnifiedScreen_set_mode_brew();
+    profileSelectedThisSession = false;
+    controller.getUI()->changeScreen(&ui_NewStandbyScreen, &ui_NewStandbyScreen_screen_init);
     controller.getUI()->markDirty();
 }
 
